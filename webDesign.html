@@ -1,0 +1,3121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>
+        if (
+          navigator.userAgent.match(/MSIE|Internet Explorer/i) ||
+          navigator.userAgent.match(/Trident\/7\..*?rv:11/i)
+        ) {
+          var href = document.location.href;
+          if (!href.match(/[?&]nowprocket/)) {
+            if (href.indexOf("?") == -1) {
+              if (href.indexOf("#") == -1) {
+                document.location.href = href + "?nowprocket=1";
+              } else {
+                document.location.href = href.replace("#", "?nowprocket=1#");
+              }
+            } else {
+              if (href.indexOf("#") == -1) {
+                document.location.href = href + "&nowprocket=1";
+              } else {
+                document.location.href = href.replace("#", "&nowprocket=1#");
+              }
+            }
+          }
+        }
+      </script>
+      <script>
+        class RocketLazyLoadScripts {
+          constructor() {
+            (this.v = "1.2.4"),
+              (this.triggerEvents = [
+                "keydown",
+                "mousedown",
+                "mousemove",
+                "touchmove",
+                "touchstart",
+                "touchend",
+                "wheel",
+              ]),
+              (this.userEventHandler = this._triggerListener.bind(this)),
+              (this.touchStartHandler = this._onTouchStart.bind(this)),
+              (this.touchMoveHandler = this._onTouchMove.bind(this)),
+              (this.touchEndHandler = this._onTouchEnd.bind(this)),
+              (this.clickHandler = this._onClick.bind(this)),
+              (this.interceptedClicks = []),
+              window.addEventListener("pageshow", (t) => {
+                this.persisted = t.persisted;
+              }),
+              window.addEventListener("DOMContentLoaded", () => {
+                this._preconnect3rdParties();
+              }),
+              (this.delayedScripts = { normal: [], async: [], defer: [] }),
+              (this.trash = []),
+              (this.allJQueries = []);
+          }
+          _addUserInteractionListener(t) {
+            if (document.hidden) {
+              t._triggerListener();
+              return;
+            }
+            this.triggerEvents.forEach((e) =>
+              window.addEventListener(e, t.userEventHandler, { passive: !0 })
+            ),
+              window.addEventListener("touchstart", t.touchStartHandler, {
+                passive: !0,
+              }),
+              window.addEventListener("mousedown", t.touchStartHandler),
+              document.addEventListener("visibilitychange", t.userEventHandler);
+          }
+          _removeUserInteractionListener() {
+            this.triggerEvents.forEach((t) =>
+              window.removeEventListener(t, this.userEventHandler, {
+                passive: !0,
+              })
+            ),
+              document.removeEventListener(
+                "visibilitychange",
+                this.userEventHandler
+              );
+          }
+          _onTouchStart(t) {
+            "HTML" !== t.target.tagName &&
+              (window.addEventListener("touchend", this.touchEndHandler),
+              window.addEventListener("mouseup", this.touchEndHandler),
+              window.addEventListener("touchmove", this.touchMoveHandler, {
+                passive: !0,
+              }),
+              window.addEventListener("mousemove", this.touchMoveHandler),
+              t.target.addEventListener("click", this.clickHandler),
+              this._renameDOMAttribute(t.target, "onclick", "rocket-onclick"),
+              this._pendingClickStarted());
+          }
+          _onTouchMove(t) {
+            window.removeEventListener("touchend", this.touchEndHandler),
+              window.removeEventListener("mouseup", this.touchEndHandler),
+              window.removeEventListener("touchmove", this.touchMoveHandler, {
+                passive: !0,
+              }),
+              window.removeEventListener("mousemove", this.touchMoveHandler),
+              t.target.removeEventListener("click", this.clickHandler),
+              this._renameDOMAttribute(t.target, "rocket-onclick", "onclick"),
+              this._pendingClickFinished();
+          }
+          _onTouchEnd() {
+            window.removeEventListener("touchend", this.touchEndHandler),
+              window.removeEventListener("mouseup", this.touchEndHandler),
+              window.removeEventListener("touchmove", this.touchMoveHandler, {
+                passive: !0,
+              }),
+              window.removeEventListener("mousemove", this.touchMoveHandler);
+          }
+          _onClick(t) {
+            t.target.removeEventListener("click", this.clickHandler),
+              this._renameDOMAttribute(t.target, "rocket-onclick", "onclick"),
+              this.interceptedClicks.push(t),
+              t.preventDefault(),
+              t.stopPropagation(),
+              t.stopImmediatePropagation(),
+              this._pendingClickFinished();
+          }
+          _replayClicks() {
+            window.removeEventListener("touchstart", this.touchStartHandler, {
+              passive: !0,
+            }),
+              window.removeEventListener("mousedown", this.touchStartHandler),
+              this.interceptedClicks.forEach((t) => {
+                t.target.dispatchEvent(
+                  new MouseEvent("click", {
+                    view: t.view,
+                    bubbles: !0,
+                    cancelable: !0,
+                  })
+                );
+              });
+          }
+          _waitForPendingClicks() {
+            return new Promise((t) => {
+              this._isClickPending ? (this._pendingClickFinished = t) : t();
+            });
+          }
+          _pendingClickStarted() {
+            this._isClickPending = !0;
+          }
+          _pendingClickFinished() {
+            this._isClickPending = !1;
+          }
+          _renameDOMAttribute(t, e, r) {
+            t.hasAttribute &&
+              t.hasAttribute(e) &&
+              (event.target.setAttribute(r, event.target.getAttribute(e)),
+              event.target.removeAttribute(e));
+          }
+          _triggerListener() {
+            this._removeUserInteractionListener(this),
+              "loading" === document.readyState
+                ? document.addEventListener(
+                    "DOMContentLoaded",
+                    this._loadEverythingNow.bind(this)
+                  )
+                : this._loadEverythingNow();
+          }
+          _preconnect3rdParties() {
+            let t = [];
+            document
+              .querySelectorAll(
+                "script[type=rocketlazyloadscript][data-rocket-src]"
+              )
+              .forEach((e) => {
+                let r = e.getAttribute("data-rocket-src");
+                if (r && 0 !== r.indexOf("data:")) {
+                  0 === r.indexOf("//") && (r = location.protocol + r);
+                  try {
+                    let i = new URL(r).origin;
+                    i !== location.origin &&
+                      t.push({
+                        src: i,
+                        crossOrigin:
+                          e.crossOrigin ||
+                          "module" === e.getAttribute("data-rocket-type"),
+                      });
+                  } catch (n) {}
+                }
+              }),
+              (t = [...new Map(t.map((t) => [JSON.stringify(t), t])).values()]),
+              this._batchInjectResourceHints(t, "preconnect");
+          }
+          async _loadEverythingNow() {
+            (this.lastBreath = Date.now()),
+              this._delayEventListeners(),
+              this._delayJQueryReady(this),
+              this._handleDocumentWrite(),
+              this._registerAllDelayedScripts(),
+              this._preloadAllScripts(),
+              await this._loadScriptsFromList(this.delayedScripts.normal),
+              await this._loadScriptsFromList(this.delayedScripts.defer),
+              await this._loadScriptsFromList(this.delayedScripts.async);
+            try {
+              await this._triggerDOMContentLoaded(),
+                await this._pendingWebpackRequests(this),
+                await this._triggerWindowLoad();
+            } catch (t) {
+              console.error(t);
+            }
+            window.dispatchEvent(new Event("rocket-allScriptsLoaded")),
+              this._waitForPendingClicks().then(() => {
+                this._replayClicks();
+              }),
+              this._emptyTrash();
+          }
+          _registerAllDelayedScripts() {
+            document
+              .querySelectorAll("script[type=rocketlazyloadscript]")
+              .forEach((t) => {
+                t.hasAttribute("data-rocket-src")
+                  ? t.hasAttribute("async") && !1 !== t.async
+                    ? this.delayedScripts.async.push(t)
+                    : (t.hasAttribute("defer") && !1 !== t.defer) ||
+                      "module" === t.getAttribute("data-rocket-type")
+                    ? this.delayedScripts.defer.push(t)
+                    : this.delayedScripts.normal.push(t)
+                  : this.delayedScripts.normal.push(t);
+              });
+          }
+          async _transformScript(t) {
+            if (
+              (await this._littleBreath(),
+              !0 === t.noModule && "noModule" in HTMLScriptElement.prototype)
+            ) {
+              t.setAttribute("data-rocket-status", "skipped");
+              return;
+            }
+            return new Promise(
+              navigator.userAgent.indexOf("Firefox/") > 0 ||
+              "" === navigator.vendor
+                ? (e) => {
+                    let r = document.createElement("script");
+                    [...t.attributes].forEach((t) => {
+                      let e = t.nodeName;
+                      "type" !== e &&
+                        ("data-rocket-type" === e && (e = "type"),
+                        "data-rocket-src" === e && (e = "src"),
+                        r.setAttribute(e, t.nodeValue));
+                    }),
+                      t.text && (r.text = t.text),
+                      r.hasAttribute("src")
+                        ? (r.addEventListener("load", e),
+                          r.addEventListener("error", e))
+                        : ((r.text = t.text), e());
+                    try {
+                      t.parentNode.replaceChild(r, t);
+                    } catch (i) {
+                      e();
+                    }
+                  }
+                : (e) => {
+                    function r() {
+                      t.setAttribute("data-rocket-status", "failed"), e();
+                    }
+                    try {
+                      let i = t.getAttribute("data-rocket-type"),
+                        n = t.getAttribute("data-rocket-src");
+                      i
+                        ? ((t.type = i), t.removeAttribute("data-rocket-type"))
+                        : t.removeAttribute("type"),
+                        t.addEventListener("load", function r() {
+                          t.setAttribute("data-rocket-status", "executed"), e();
+                        }),
+                        t.addEventListener("error", r),
+                        n
+                          ? (t.removeAttribute("data-rocket-src"), (t.src = n))
+                          : (t.src =
+                              "data:text/javascript;base64," +
+                              window.btoa(unescape(encodeURIComponent(t.text))));
+                    } catch (s) {
+                      r();
+                    }
+                  }
+            );
+          }
+          async _loadScriptsFromList(t) {
+            let e = t.shift();
+            return e && e.isConnected
+              ? (await this._transformScript(e), this._loadScriptsFromList(t))
+              : Promise.resolve();
+          }
+          _preloadAllScripts() {
+            this._batchInjectResourceHints(
+              [
+                ...this.delayedScripts.normal,
+                ...this.delayedScripts.defer,
+                ...this.delayedScripts.async,
+              ],
+              "preload"
+            );
+          }
+          _batchInjectResourceHints(t, e) {
+            var r = document.createDocumentFragment();
+            t.forEach((t) => {
+              let i =
+                (t.getAttribute && t.getAttribute("data-rocket-src")) || t.src;
+              if (i) {
+                let n = document.createElement("link");
+                (n.href = i),
+                  (n.rel = e),
+                  "preconnect" !== e && (n.as = "script"),
+                  t.getAttribute &&
+                    "module" === t.getAttribute("data-rocket-type") &&
+                    (n.crossOrigin = !0),
+                  t.crossOrigin && (n.crossOrigin = t.crossOrigin),
+                  t.integrity && (n.integrity = t.integrity),
+                  r.appendChild(n),
+                  this.trash.push(n);
+              }
+            }),
+              document.head.appendChild(r);
+          }
+          _delayEventListeners() {
+            let t = {};
+            function e(e, r) {
+              !(function e(r) {
+                !t[r] &&
+                  ((t[r] = {
+                    originalFunctions: {
+                      add: r.addEventListener,
+                      remove: r.removeEventListener,
+                    },
+                    eventsToRewrite: [],
+                  }),
+                  (r.addEventListener = function () {
+                    (arguments[0] = i(arguments[0])),
+                      t[r].originalFunctions.add.apply(r, arguments);
+                  }),
+                  (r.removeEventListener = function () {
+                    (arguments[0] = i(arguments[0])),
+                      t[r].originalFunctions.remove.apply(r, arguments);
+                  }));
+                function i(e) {
+                  return t[r].eventsToRewrite.indexOf(e) >= 0 ? "rocket-" + e : e;
+                }
+              })(e),
+                t[e].eventsToRewrite.push(r);
+            }
+            function r(t, e) {
+              let r = t[e];
+              Object.defineProperty(t, e, {
+                get: () => r || function () {},
+                set(i) {
+                  t["rocket" + e] = r = i;
+                },
+              });
+            }
+            e(document, "DOMContentLoaded"),
+              e(window, "DOMContentLoaded"),
+              e(window, "load"),
+              e(window, "pageshow"),
+              e(document, "readystatechange"),
+              r(document, "onreadystatechange"),
+              r(window, "onload"),
+              r(window, "onpageshow");
+          }
+          _delayJQueryReady(t) {
+            let e;
+            function r(t) {
+              return t
+                .split(" ")
+                .map((t) =>
+                  "load" === t || 0 === t.indexOf("load.")
+                    ? "rocket-jquery-load"
+                    : t
+                )
+                .join(" ");
+            }
+            function i(i) {
+              if (i && i.fn && !t.allJQueries.includes(i)) {
+                i.fn.ready = i.fn.init.prototype.ready = function (e) {
+                  return (
+                    t.domReadyFired
+                      ? e.bind(document)(i)
+                      : document.addEventListener("rocket-DOMContentLoaded", () =>
+                          e.bind(document)(i)
+                        ),
+                    i([])
+                  );
+                };
+                let n = i.fn.on;
+                (i.fn.on = i.fn.init.prototype.on =
+                  function () {
+                    return (
+                      this[0] === window &&
+                        ("string" == typeof arguments[0] ||
+                        arguments[0] instanceof String
+                          ? (arguments[0] = r(arguments[0]))
+                          : "object" == typeof arguments[0] &&
+                            Object.keys(arguments[0]).forEach((t) => {
+                              let e = arguments[0][t];
+                              delete arguments[0][t], (arguments[0][r(t)] = e);
+                            })),
+                      n.apply(this, arguments),
+                      this
+                    );
+                  }),
+                  t.allJQueries.push(i);
+              }
+              e = i;
+            }
+            i(window.jQuery),
+              Object.defineProperty(window, "jQuery", {
+                get: () => e,
+                set(t) {
+                  i(t);
+                },
+              });
+          }
+          async _pendingWebpackRequests(t) {
+            let e = document.querySelector("script[data-webpack]");
+            async function r() {
+              return new Promise((t) => {
+                e.addEventListener("load", t), e.addEventListener("error", t);
+              });
+            }
+            e &&
+              (await r(),
+              await t._requestAnimFrame(),
+              await t._pendingWebpackRequests(t));
+          }
+          async _triggerDOMContentLoaded() {
+            (this.domReadyFired = !0),
+              await this._littleBreath(),
+              document.dispatchEvent(new Event("rocket-DOMContentLoaded")),
+              await this._littleBreath(),
+              window.dispatchEvent(new Event("rocket-DOMContentLoaded")),
+              await this._littleBreath(),
+              document.dispatchEvent(new Event("rocket-readystatechange")),
+              await this._littleBreath(),
+              document.rocketonreadystatechange &&
+                document.rocketonreadystatechange();
+          }
+          async _triggerWindowLoad() {
+            await this._littleBreath(),
+              window.dispatchEvent(new Event("rocket-load")),
+              await this._littleBreath(),
+              window.rocketonload && window.rocketonload(),
+              await this._littleBreath(),
+              this.allJQueries.forEach((t) =>
+                t(window).trigger("rocket-jquery-load")
+              ),
+              await this._littleBreath();
+            let t = new Event("rocket-pageshow");
+            (t.persisted = this.persisted),
+              window.dispatchEvent(t),
+              await this._littleBreath(),
+              window.rocketonpageshow &&
+                window.rocketonpageshow({ persisted: this.persisted });
+          }
+          _handleDocumentWrite() {
+            let t = new Map();
+            document.write = document.writeln = function (e) {
+              let r = document.currentScript;
+              r || console.error("WPRocket unable to document.write this: " + e);
+              let i = document.createRange(),
+                n = r.parentElement,
+                s = t.get(r);
+              void 0 === s && ((s = r.nextSibling), t.set(r, s));
+              let a = document.createDocumentFragment();
+              i.setStart(a, 0),
+                a.appendChild(i.createContextualFragment(e)),
+                n.insertBefore(a, s);
+            };
+          }
+          async _littleBreath() {
+            Date.now() - this.lastBreath > 45 &&
+              (await this._requestAnimFrame(), (this.lastBreath = Date.now()));
+          }
+          async _requestAnimFrame() {
+            return document.hidden
+              ? new Promise((t) => setTimeout(t))
+              : new Promise((t) => requestAnimationFrame(t));
+          }
+          _emptyTrash() {
+            this.trash.forEach((t) => t.remove());
+          }
+          static run() {
+            let t = new RocketLazyLoadScripts();
+            t._addUserInteractionListener(t);
+          }
+        }
+        RocketLazyLoadScripts.run();
+      </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Development</title>
+    <link href="css/styles.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="content" class="site-content">
+        <div class="ast-container">
+          <div id="primary" class="content-area primary">
+            <main id="main" class="site-main">
+              <article
+                class="post-14652 page type-page status-publish has-post-thumbnail ast-article-single"
+                id="post-14652"
+                itemtype="https://schema.org/CreativeWork"
+                itemscope="itemscope"
+              >
+                <header
+                  class="entry-header ast-no-title ast-header-without-markup"
+                ></header>
+                <!-- .entry-header -->
+
+                <div class="entry-content clear" itemprop="text">
+                  <div
+                    data-elementor-type="wp-page"
+                    data-elementor-id="14652"
+                    class="elementor elementor-14652"
+                  >
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-2a7d499d elementor-section-height-min-height elementor-section-boxed elementor-section-height-default elementor-section-items-middle"
+                      data-id="2a7d499d"
+                      data-element_type="section"
+                      data-settings='{"background_background":"classic"}'
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-100 elementor-top-column elementor-element elementor-element-7741c114"
+                          data-id="7741c114"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <section
+                              class="elementor-section elementor-inner-section elementor-element elementor-element-377124b0 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                              data-id="377124b0"
+                              data-element_type="section"
+                            >
+                              <div
+                                class="elementor-container elementor-column-gap-default"
+                              >
+                                <div
+                                  class="elementor-column elementor-col-50 elementor-inner-column elementor-element elementor-element-3dec9972"
+                                  data-id="3dec9972"
+                                  data-element_type="column"
+                                >
+                                  <div
+                                    class="elementor-widget-wrap elementor-element-populated"
+                                  >
+                                    <div
+                                      class="elementor-element elementor-element-46dfe292 elementor-widget elementor-widget-heading"
+                                      data-id="46dfe292"
+                                      data-element_type="widget"
+                                      data-widget_type="heading.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <h1
+                                          class="elementor-heading-title elementor-size-default"
+                                        >
+                                          Besttech Digital Company In Chennai
+                                        </h1>
+                                      </div>
+                                    </div>
+                                    <div
+                                      class="elementor-element elementor-element-7a0faaf4 elementor-widget elementor-widget-text-editor"
+                                      data-id="7a0faaf4"
+                                      data-element_type="widget"
+                                      data-widget_type="text-editor.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <p>
+                                          Besttech Digital Company in Chennai,
+                                          specializing in digital marketing
+                                          services. With a team of experienced
+                                          professionals, they offer a wide range
+                                          of solutions to help businesses
+                                          enhance their online presence, reach
+                                          their target audience, and drive
+                                          conversions. Their services include
+                                          SEO, social media marketing, website
+                                          development, and more. Besttech
+                                          Digital Solutions is committed to
+                                          delivering tailored strategies and
+                                          results-driven solutions to meet the
+                                          unique needs of each client
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div
+                                      class="elementor-element elementor-element-75eb5107 elementor-mobile-align-center elementor-widget elementor-widget-button"
+                                      data-id="75eb5107"
+                                      data-element_type="widget"
+                                      data-widget_type="button.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <div class="elementor-button-wrapper">
+                                          <a
+                                            class="elementor-button elementor-button-link elementor-size-sm"
+                                            href="https://www.besttech.in/contact/"
+                                          >
+                                            <span
+                                              class="elementor-button-content-wrapper"
+                                            >
+                                              <span
+                                                class="elementor-button-icon"
+                                              >
+                                                <i
+                                                  aria-hidden="true"
+                                                  class="fas fa-chevron-right"
+                                                ></i>
+                                              </span>
+                                              <span
+                                                class="elementor-button-text"
+                                                >Get FREE Consultation</span
+                                              >
+                                            </span>
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div
+                                  class="elementor-column elementor-col-50 elementor-inner-column elementor-element elementor-element-d4bf1d6"
+                                  data-id="d4bf1d6"
+                                  data-element_type="column"
+                                  data-settings='{"background_background":"classic"}'
+                                >
+                                  <div
+                                    class="elementor-widget-wrap elementor-element-populated"
+                                  >
+                                    <div
+                                      class="elementor-element elementor-element-b919775 elementor-widget elementor-widget-html"
+                                      data-id="b919775"
+                                      data-element_type="widget"
+                                      data-widget_type="html.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <form
+                                          id="myForm"
+                                          action="https://script.google.com/macros/s/AKfycbyZnu2YSXYL1Fuxs4abJKd_f2BPmpV6_0HfOCH99FvndekwKGTn4rkJjV1JhtDsU6BgSQ/exec"
+                                          method="post"
+                                        >
+                                          <label for="name">Name:</label>
+                                          <input
+                                            type="text"
+                                            id="name"
+                                            name="name"
+                                            required=""
+                                          /><br /><br />
+
+                                          <label for="email">Email:</label>
+                                          <input
+                                            type="email"
+                                            id="email"
+                                            name="email"
+                                            required=""
+                                          /><br /><br />
+
+                                          <label for="mobile"
+                                            >Mobile Number:</label
+                                          >
+                                          <input
+                                            type="tel"
+                                            id="mobile"
+                                            name="mobile"
+                                            required=""
+                                            pattern="\d{10,}"
+                                            title="Please enter a valid mobile number"
+                                          />
+                                          <br /><br />
+
+                                          <label for="services"
+                                            >Services:</label
+                                          >
+                                          <select
+                                            id="services"
+                                            name="services"
+                                            required=""
+                                          >
+                                            <option value="">
+                                              Select a service
+                                            </option>
+                                            <option value="Digital Marketing">
+                                              Digital Marketing
+                                            </option>
+                                            <option value="Website Development">
+                                              Website Development
+                                            </option>
+                                            <option value="APP Development">
+                                              APP Development
+                                            </option>
+                                            <option value="Graphic Designing">
+                                              Graphic Designing
+                                            </option></select
+                                          ><br /><br />
+
+                                          <input
+                                            type="hidden"
+                                            id="page_url"
+                                            name="page_url"
+                                          />
+
+                                          <input type="submit" value="Submit" />
+                                        </form>
+
+                                        <script
+                                          src="data:text/javascript;base64,CiAgICAvLyBGdW5jdGlvbiB0byBnZXQgdGhlIGN1cnJlbnQgVVJMCiAgICBmdW5jdGlvbiBnZXRDdXJyZW50VXJsKCkgewogICAgICAgIHJldHVybiB3aW5kb3cubG9jYXRpb24uaHJlZjsKICAgIH0KCiAgICAvLyBGdW5jdGlvbiB0byBwb3B1bGF0ZSB0aGUgaGlkZGVuIGlucHV0IGZpZWxkIHdpdGggdGhlIGN1cnJlbnQgVVJMCiAgICBmdW5jdGlvbiBzZXRQYWdlVXJsKCkgewogICAgICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwYWdlX3VybCcpLnZhbHVlID0gZ2V0Q3VycmVudFVybCgpOwogICAgfQoKICAgIC8vIEFkZCBhbiBldmVudCBsaXN0ZW5lciB0byB0aGUgZm9ybSB0byBjYWxsIHNldFBhZ2VVcmwoKSBiZWZvcmUgc3VibWl0dGluZyB0aGUgZm9ybQogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ215Rm9ybScpLmFkZEV2ZW50TGlzdGVuZXIoJ3N1Ym1pdCcsIGZ1bmN0aW9uKGV2ZW50KSB7CiAgICAgICAgc2V0UGFnZVVybCgpOwogICAgICAgIC8vIFByZXZlbnQgdGhlIGZvcm0gZnJvbSBzdWJtaXR0aW5nIG5vcm1hbGx5CiAgICAgICAgZXZlbnQucHJldmVudERlZmF1bHQoKTsKICAgICAgICAvLyBTdWJtaXQgdGhlIGZvcm0gZGF0YSB1c2luZyBBSkFYCiAgICAgICAgdmFyIGZvcm1EYXRhID0gbmV3IEZvcm1EYXRhKGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdteUZvcm0nKSk7CiAgICAgICAgZmV0Y2goJ2h0dHBzOi8vc2NyaXB0Lmdvb2dsZS5jb20vbWFjcm9zL3MvQUtmeWNieVpudTJZU1hZTDFGdXhzNGFiSktkX2YyQlBtcFY2XzBIZk9DSDk5RnZuZGVrd0tHVG40cmtKalYxSmh0RHNVNkJnU1EvZXhlYycsIHsKICAgICAgICAgICAgbWV0aG9kOiAnUE9TVCcsCiAgICAgICAgICAgIGJvZHk6IGZvcm1EYXRhCiAgICAgICAgfSkKICAgICAgICAudGhlbihyZXNwb25zZSA9PiB7CiAgICAgICAgICAgIC8vIENoZWNrIGlmIHRoZSBmb3JtIHN1Ym1pc3Npb24gd2FzIHN1Y2Nlc3NmdWwKICAgICAgICAgICAgaWYgKHJlc3BvbnNlLm9rKSB7CiAgICAgICAgICAgICAgICAvLyBSZWRpcmVjdCB0byB0aGUgdGhhbmsgeW91IHBhZ2UKICAgICAgICAgICAgICAgIHdpbmRvdy5sb2NhdGlvbi5ocmVmID0gJ2h0dHBzOi8vd3d3LmJlc3R0ZWNoLmluL3RoYW5rLXlvdS8nOwogICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgLy8gSGFuZGxlIGVycm9ycyBpZiBuZWNlc3NhcnkKICAgICAgICAgICAgICAgIGNvbnNvbGUuZXJyb3IoJ0Zvcm0gc3VibWlzc2lvbiBmYWlsZWQ6JywgcmVzcG9uc2UpOwogICAgICAgICAgICB9CiAgICAgICAgfSkKICAgICAgICAuY2F0Y2goZXJyb3IgPT4gewogICAgICAgICAgICAvLyBIYW5kbGUgbmV0d29yayBlcnJvcnMKICAgICAgICAgICAgY29uc29sZS5lcnJvcignRXJyb3Igc3VibWl0dGluZyBmb3JtOicsIGVycm9yKTsKICAgICAgICB9KTsKICAgIH0pOwo="
+                                          data-rocket-status="executed"
+                                        >
+                                          // Function to get the current URL
+                                          function getCurrentUrl() {
+                                              return window.location.href;
+                                          }
+
+                                          // Function to populate the hidden input field with the current URL
+                                          function setPageUrl() {
+                                              document.getElementById('page_url').value = getCurrentUrl();
+                                          }
+
+                                          // Add an event listener to the form to call setPageUrl() before submitting the form
+                                          document.getElementById('myForm').addEventListener('submit', function(event) {
+                                              setPageUrl();
+                                              // Prevent the form from submitting normally
+                                              event.preventDefault();
+                                              // Submit the form data using AJAX
+                                              var formData = new FormData(document.getElementById('myForm'));
+                                              fetch('https://script.google.com/macros/s/AKfycbyZnu2YSXYL1Fuxs4abJKd_f2BPmpV6_0HfOCH99FvndekwKGTn4rkJjV1JhtDsU6BgSQ/exec', {
+                                                  method: 'POST',
+                                                  body: formData
+                                              })
+                                              .then(response => {
+                                                  // Check if the form submission was successful
+                                                  if (response.ok) {
+                                                      // Redirect to the thank you page
+                                                      window.location.href = 'https://www.besttech.in/thank-you/';
+                                                  } else {
+                                                      // Handle errors if necessary
+                                                      console.error('Form submission failed:', response);
+                                                  }
+                                              })
+                                              .catch(error => {
+                                                  // Handle network errors
+                                                  console.error('Error submitting form:', error);
+                                              });
+                                          });
+                                        </script>
+                                      </div>
+                                    </div>
+                                    <div
+                                      class="elementor-element elementor-element-539be0c elementor-widget elementor-widget-menu-anchor"
+                                      data-id="539be0c"
+                                      data-element_type="widget"
+                                      data-widget_type="menu-anchor.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <div
+                                          class="elementor-menu-anchor"
+                                          id="form"
+                                        ></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </section>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-71fbd3cb elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="71fbd3cb"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-100 elementor-top-column elementor-element elementor-element-19da717c"
+                          data-id="19da717c"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-1e504e8f elementor-widget elementor-widget-heading"
+                              data-id="1e504e8f"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h2
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  Exploring The Benefits Of A Digital Company In
+                                  Chennai
+                                </h2>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-24c3060 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="24c3060"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-8fa6f0c"
+                          data-id="8fa6f0c"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-1b0c2ac elementor-widget elementor-widget-image"
+                              data-id="1b0c2ac"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  fetchpriority="high"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Increased-efficiency-and-productivity.webp"
+                                  class="attachment-large size-large wp-image-14788"
+                                  alt="Increased efficiency and productivity - digital company -Digital Marketing Internship"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Increased-efficiency-and-productivity.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Increased-efficiency-and-productivity-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Increased-efficiency-and-productivity-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-2faf79c elementor-widget elementor-widget-icon-box"
+                              data-id="2faf79c"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h3 class="elementor-icon-box-title">
+                                      <span>
+                                        Increased Efficiency And Productivity
+                                      </span>
+                                    </h3>
+
+                                    <p class="elementor-icon-box-description">
+                                      Besttech Digital Company enhances
+                                      efficiency and productivity through its
+                                      services. With their expertise, businesses
+                                      can streamline processes, leverage
+                                      technology, and optimize digital
+                                      strategies, leading to improved
+                                      performance and success.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-abf93ee"
+                          data-id="abf93ee"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-4450273 elementor-widget elementor-widget-image"
+                              data-id="4450273"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Customer-experience.webp"
+                                  class="attachment-large size-large wp-image-14784"
+                                  alt="Customer experience"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Customer-experience.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Customer-experience-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Customer-experience-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-fbaafa9 elementor-widget elementor-widget-icon-box"
+                              data-id="fbaafa9"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h3 class="elementor-icon-box-title">
+                                      <span> Customer Experience </span>
+                                    </h3>
+
+                                    <p class="elementor-icon-box-description">
+                                      Customer Experience by delivering
+                                      personalized solutions, prompt support,
+                                      and exceptional service. We strive to
+                                      exceed expectations, foster long-term
+                                      partnerships, and ensure client
+                                      satisfaction.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-1bdc5d6"
+                          data-id="1bdc5d6"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-743cca5 elementor-widget elementor-widget-image"
+                              data-id="743cca5"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Increased-Profit.webp"
+                                  class="attachment-large size-large wp-image-14789"
+                                  alt="Increased Profit"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Increased-Profit.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Increased-Profit-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Increased-Profit-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-530f0ae elementor-widget elementor-widget-icon-box"
+                              data-id="530f0ae"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h3 class="elementor-icon-box-title">
+                                      <span> Increased Profit </span>
+                                    </h3>
+
+                                    <p class="elementor-icon-box-description">
+                                      90% of organizations that have completed
+                                      Digital Company transformation report
+                                      increased profits. 80% say they have
+                                      increased their market share. 25% higher
+                                      revenue growth than competitors.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-4448891 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="4448891"
+                      data-element_type="section"
+                    >
+                      <div class="elementor-background-overlay"></div>
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-100 elementor-top-column elementor-element elementor-element-f3b7436"
+                          data-id="f3b7436"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <section
+                              class="elementor-section elementor-inner-section elementor-element elementor-element-f72a25e elementor-section-content-middle elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                              data-id="f72a25e"
+                              data-element_type="section"
+                            >
+                              <div
+                                class="elementor-container elementor-column-gap-default"
+                              >
+                                <div
+                                  class="elementor-column elementor-col-50 elementor-inner-column elementor-element elementor-element-32155e6"
+                                  data-id="32155e6"
+                                  data-element_type="column"
+                                >
+                                  <div
+                                    class="elementor-widget-wrap elementor-element-populated"
+                                  >
+                                    <div
+                                      class="elementor-element elementor-element-0304e98 elementor-widget elementor-widget-heading"
+                                      data-id="0304e98"
+                                      data-element_type="widget"
+                                      data-widget_type="heading.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <h5
+                                          class="elementor-heading-title elementor-size-default"
+                                        >
+                                          Would You Like To Start A Project With
+                                          Us?
+                                        </h5>
+                                      </div>
+                                    </div>
+                                    <div
+                                      class="elementor-element elementor-element-b3d0e32 elementor-widget elementor-widget-text-editor"
+                                      data-id="b3d0e32"
+                                      data-element_type="widget"
+                                      data-widget_type="text-editor.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <p>We Assure A Best Services</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div
+                                  class="elementor-column elementor-col-50 elementor-inner-column elementor-element elementor-element-0f476cf"
+                                  data-id="0f476cf"
+                                  data-element_type="column"
+                                >
+                                  <div
+                                    class="elementor-widget-wrap elementor-element-populated"
+                                  >
+                                    <div
+                                      class="elementor-element elementor-element-0f55856 elementor-align-center elementor-tablet-align-center elementor-widget elementor-widget-button"
+                                      data-id="0f55856"
+                                      data-element_type="widget"
+                                      data-widget_type="button.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <div class="elementor-button-wrapper">
+                                          <a
+                                            class="elementor-button elementor-button-link elementor-size-sm"
+                                            href="#form"
+                                          >
+                                            <span
+                                              class="elementor-button-content-wrapper"
+                                            >
+                                              <span
+                                                class="elementor-button-text"
+                                                >Get Quote</span
+                                              >
+                                            </span>
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </section>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-15f72900 elementor-section-height-min-height elementor-section-boxed elementor-section-height-default elementor-section-items-middle"
+                      data-id="15f72900"
+                      data-element_type="section"
+                      data-settings='{"background_background":"classic","shape_divider_top":"triangle"}'
+                    >
+                      <div
+                        class="elementor-shape elementor-shape-top"
+                        data-negative="false"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 1000 100"
+                          preserveAspectRatio="none"
+                        >
+                          <path
+                            class="elementor-shape-fill"
+                            d="M500,98.9L0,6.1V0h1000v6.1L500,98.9z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-389b5ef2"
+                          data-id="389b5ef2"
+                          data-element_type="column"
+                          data-settings='{"background_background":"classic"}'
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-2f81b311 elementor-widget elementor-widget-heading"
+                              data-id="2f81b311"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h5
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  Services in
+                                </h5>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-72f73b81 elementor-widget elementor-widget-heading"
+                              data-id="72f73b81"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h4
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  Besttech Digital Company
+                                </h4>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-788f608 elementor-widget elementor-widget-image"
+                              data-id="788f608"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Besttech-Digital-Company_.webp"
+                                  class="attachment-large size-large wp-image-14781"
+                                  alt="Besttech Digital Company_"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Besttech-Digital-Company_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Besttech-Digital-Company_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Besttech-Digital-Company_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-4c09f708"
+                          data-id="4c09f708"
+                          data-element_type="column"
+                          data-settings='{"background_background":"classic"}'
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-3978ca3d elementor-view-default elementor-position-top elementor-mobile-position-top elementor-widget elementor-widget-icon-box"
+                              data-id="3978ca3d"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-icon">
+                                    <span
+                                      class="elementor-icon elementor-animation-"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        id="Capa_1"
+                                        height="512"
+                                        viewBox="0 0 512 512"
+                                        width="512"
+                                      >
+                                        <path
+                                          d="m191.79 217.86c-12.95 14.93-20.79 34.38-20.79 55.64v105h-110c-8.28 0-15-6.72-15-15v-75c0-49.63 40.37-90 90-90 20.45 0 39.95 6.82 55.79 19.36z"
+                                          fill="#fdbf00"
+                                        ></path>
+                                        <path
+                                          d="m191.79 217.86c-12.95 14.93-20.79 34.38-20.79 55.64v105h-35v-180c14.21 0 27.96 3.29 40.34 9.51 5.44 2.73 10.62 6.02 15.45 9.85z"
+                                          fill="#fe9022"
+                                        ></path>
+                                        <path
+                                          d="m466 288.5v75c0 8.28-6.72 15-15 15h-110v-105c0-21.26-7.84-40.71-20.78-55.64 15.83-12.55 35.28-19.36 55.78-19.36 49.63 0 90 40.37 90 90z"
+                                          fill="#ff641a"
+                                        ></path>
+                                        <path
+                                          d="m466 288.5v75c0 8.28-6.72 15-15 15h-75v-180c14.49 0 28.18 3.44 40.31 9.55 29.44 14.8 49.69 45.3 49.69 80.45z"
+                                          fill="#f03800"
+                                        ></path>
+                                        <path
+                                          d="m256 183.5c-49.626 0-90 40.374-90 90v120c0 8.284 6.716 15 15 15h150c8.284 0 15-6.716 15-15v-120c0-49.626-40.374-90-90-90z"
+                                          fill="#0097f0"
+                                        ></path>
+                                        <path
+                                          d="m346 273.5v120c0 8.28-6.72 15-15 15h-75v-225c15.17 0 29.48 3.77 42.02 10.43 28.51 15.11 47.98 45.11 47.98 79.57z"
+                                          fill="#0052c2"
+                                        ></path>
+                                        <path
+                                          d="m497 371c-8.284 0-15 6.716-15 15v76h-76c-8.284 0-15 6.716-15 15s6.716 15 15 15h91c8.284 0 15-6.716 15-15v-91c0-8.284-6.716-15-15-15z"
+                                          fill="#00b8f0"
+                                        ></path>
+                                        <path
+                                          d="m106 462h-76v-76c0-8.284-6.716-15-15-15s-15 6.716-15 15v91c0 8.284 6.716 15 15 15h91c8.284 0 15-6.716 15-15s-6.716-15-15-15z"
+                                          fill="#5ecef4"
+                                        ></path>
+                                        <path
+                                          d="m106 20h-91c-8.284 0-15 6.716-15 15v91c0 8.284 6.716 15 15 15s15-6.716 15-15v-76h76c8.284 0 15-6.716 15-15s-6.716-15-15-15z"
+                                          fill="#5ecef4"
+                                        ></path>
+                                        <path
+                                          d="m497 20h-92c-8.284 0-15 6.716-15 15s6.716 15 15 15h77v76c0 8.284 6.716 15 15 15s15-6.716 15-15v-91c0-8.284-6.716-15-15-15z"
+                                          fill="#00b8f0"
+                                        ></path>
+                                        <circle
+                                          cx="256"
+                                          cy="158.5"
+                                          fill="#fecec0"
+                                          r="55"
+                                        ></circle>
+                                        <path
+                                          d="m311 158.5c0 13.48-4.88 25.86-12.98 35.43-10.08 11.96-25.18 19.57-42.02 19.57v-110c30.33 0 55 24.67 55 55z"
+                                          fill="#feb99e"
+                                        ></path>
+                                        <circle
+                                          cx="376"
+                                          cy="178.5"
+                                          fill="#fecec0"
+                                          r="50"
+                                        ></circle>
+                                        <path
+                                          d="m426 178.5c0 11.04-3.6 21.26-9.69 29.55-9.11 12.39-23.79 20.45-40.31 20.45v-100c27.57 0 50 22.43 50 50z"
+                                          fill="#feb99e"
+                                        ></path>
+                                        <circle
+                                          cx="136"
+                                          cy="178.5"
+                                          fill="#fecec0"
+                                          r="50"
+                                        ></circle>
+                                        <path
+                                          d="m186 178.5c0 11.02-3.59 21.23-9.66 29.51-9.11 12.42-23.8 20.49-40.34 20.49v-100c27.57 0 50 22.43 50 50z"
+                                          fill="#feb99e"
+                                        ></path>
+                                      </svg>
+                                    </span>
+                                  </div>
+
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> Digital Marketing </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      A Digital Marketing Company offers various
+                                      services to help businesses promote their
+                                      products or services online and improve
+                                      their online presence, visibility, and
+                                      customer engagement.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-7057b1e9 elementor-view-default elementor-position-top elementor-mobile-position-top elementor-widget elementor-widget-icon-box"
+                              data-id="7057b1e9"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-icon">
+                                    <span
+                                      class="elementor-icon elementor-animation-"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        height="512pt"
+                                        viewBox="0 -16 512.00001 512"
+                                        width="512pt"
+                                      >
+                                        <path
+                                          d="m512 27.644531v345.316407c0 15.269531-12.375 27.644531-27.644531 27.644531h-387.152344c-15.269531 0-27.644531-12.375-27.644531-27.644531v-345.316407c0-15.269531 12.375-27.644531 27.644531-27.644531h387.152344c15.269531 0 27.644531 12.375 27.644531 27.644531zm0 0"
+                                          fill="#c4e2f2"
+                                        ></path>
+                                        <path
+                                          d="m126.03125 343.578125h36.167969v57.027344h-36.167969zm0 0"
+                                          fill="#83b2c6"
+                                        ></path>
+                                        <path
+                                          d="m197.679688 280.820312h36.15625v119.785157h-36.15625zm0 0"
+                                          fill="#83b2c6"
+                                        ></path>
+                                        <path
+                                          d="m511.996094 27.644531v33.019531h-442.441406v-33.019531c0-15.269531 12.371093-27.644531 27.644531-27.644531h387.152343c15.269532 0 27.644532 12.375 27.644532 27.644531zm0 0"
+                                          fill="#83b2c6"
+                                        ></path>
+                                        <path
+                                          d="m106.15625 40.269531c-7.28125 0-10.558594-9.476562-4.851562-14.003906 5.59375-4.433594 13.964843.71875 12.550781 7.6875-.738281 3.625-3.992188 6.316406-7.699219 6.316406zm0 0"
+                                          fill="#e5e5e5"
+                                        ></path>
+                                        <path
+                                          d="m159.5 40.269531c-7.195312 0-10.53125-9.324219-4.96875-13.90625 2.542969-2.09375 6.257812-2.347656 9.070312-.628906 2.839844 1.738281 4.304688 5.222656 3.546876 8.460937-.824219 3.511719-4.03125 6.074219-7.648438 6.074219zm0 0"
+                                          fill="#e5e5e5"
+                                        ></path>
+                                        <path
+                                          d="m132.839844 40.269531c-3.203125 0-6.152344-2.019531-7.316406-4.996093-1.261719-3.226563-.183594-7.003907 2.578124-9.101563 5.75-4.363281 14.144532 1.144531 12.335938 8.179687-.882812 3.425782-4.046875 5.917969-7.597656 5.917969zm0 0"
+                                          fill="#e5e5e5"
+                                        ></path>
+                                        <path
+                                          d="m416.285156 229.054688c0 69.316406-56.191406 125.507812-125.515625 125.507812-20.5 0-39.839843-4.917969-56.933593-13.628906-13.691407-6.976563-25.9375-16.402344-36.15625-27.699219-20.148438-22.269531-32.414063-51.785156-32.414063-84.179687 0-69.316407 56.1875-125.503907 125.503906-125.503907v125.503907l99.082031-77.042969c16.570313 21.273437 26.433594 48.007812 26.433594 77.042969zm0 0"
+                                          fill="#ff491f"
+                                        ></path>
+                                        <path
+                                          d="m233.835938 280.820312v60.113282c-13.691407-6.976563-25.9375-16.402344-36.15625-27.699219v-32.414063zm0 0"
+                                          fill="#ed3618"
+                                        ></path>
+                                        <path
+                                          d="m401.957031 93.789062-99.085937 76.78125v-125.070312c40.269531 0 76.125 18.90625 99.085937 48.289062zm0 0"
+                                          fill="#83b2c6"
+                                        ></path>
+                                        <path
+                                          d="m416.277344 229.050781c0 41.847657-20.488282 78.917969-51.984375 101.71875l-73.519531-101.71875 99.074218-77.046875c16.566406 21.277344 26.429688 48.011719 26.429688 77.046875zm0 0"
+                                          fill="#2c92bf"
+                                        ></path>
+                                        <path
+                                          d="m417.644531 93.789062-99.082031 76.78125v-125.070312c40.269531 0 76.125 18.90625 99.082031 48.289062zm0 0"
+                                          fill="#ff8e1d"
+                                        ></path>
+                                        <g fill="#32cc77">
+                                          <path
+                                            d="m0 244.738281h36.167969v234.402344h-36.167969zm0 0"
+                                          ></path>
+                                          <path
+                                            d="m69.554688 191.398438h36.164062v287.742187h-36.164062zm0 0"
+                                          ></path>
+                                          <path
+                                            d="m141.722656 343.578125h36.167969v135.5625h-36.167969zm0 0"
+                                          ></path>
+                                          <path
+                                            d="m213.363281 280.824219h36.167969v198.316406h-36.167969zm0 0"
+                                          ></path>
+                                        </g>
+                                        <path
+                                          d="m484.863281 370.503906h-83.152343c-4.332032 0-7.84375-3.511718-7.84375-7.84375 0-4.332031 3.511718-7.84375 7.84375-7.84375h83.148437c4.335937 0 7.847656 3.511719 7.847656 7.84375 0 4.332032-3.511719 7.84375-7.84375 7.84375zm0 0"
+                                          fill="#ff491f"
+                                        ></path>
+                                        <path
+                                          d="m484.863281 337.304688h-58.050781c-4.332031 0-7.84375-3.511719-7.84375-7.847657 0-4.332031 3.511719-7.84375 7.84375-7.84375h58.050781c4.332031 0 7.84375 3.511719 7.84375 7.84375 0 4.335938-3.511719 7.847657-7.84375 7.847657zm0 0"
+                                          fill="#ff8e1d"
+                                        ></path>
+                                      </svg>
+                                    </span>
+                                  </div>
+
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> Graphic Designing </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      Graphic Designing creates visually
+                                      appealing and engaging designs for various
+                                      digital platforms, helping businesses
+                                      stand out and attract their target
+                                      audience.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-4d906a27"
+                          data-id="4d906a27"
+                          data-element_type="column"
+                          data-settings='{"background_background":"classic"}'
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-4a5839ad elementor-view-default elementor-position-top elementor-mobile-position-top elementor-widget elementor-widget-icon-box"
+                              data-id="4a5839ad"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-icon">
+                                    <span
+                                      class="elementor-icon elementor-animation-"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        id="Layer_1"
+                                        height="512"
+                                        viewBox="0 0 256 256"
+                                        width="512"
+                                      >
+                                        <g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m202.37 222.985c0 2.75-2.25 5-5 5h-138.74c-2.75 0-5-2.25-5-5v-178.34c0-2.75 2.25-5 5-5h138.74c2.75 0 5 2.25 5 5z"
+                                                fill="#f8af23"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m66.67 227.985h-8.04c-2.75 0-5-2.25-5-5v-178.34c0-2.75 2.25-5 5-5h8.04c-2.75 0-5 2.25-5 5v178.34c0 2.75 2.25 5 5 5z"
+                                                fill="#f87023"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m189.33 227.985h8.04c2.75 0 5-2.25 5-5v-178.34c0-2.75-2.25-5-5-5h-8.04c2.75 0 5 2.25 5 5v178.34c0 2.75-2.25 5-5 5z"
+                                                fill="#f8d323"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m144.016 80.717v30.487l-16.016-14.572-16.016 14.572v-30.487c4.78 2.527 10.239 3.957 16.016 3.957s11.236-1.43 16.016-3.957z"
+                                                fill="#f46275"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m128 15.83c-19.005 0-34.415 15.409-34.415 34.415 0 13.229 7.452 24.71 18.399 30.472 4.78 2.527 10.239 3.957 16.016 3.957s11.236-1.43 16.016-3.957c10.947-5.762 18.399-17.244 18.399-30.472 0-19.006-15.41-34.415-34.415-34.415z"
+                                                fill="#63bce7"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m111.984 80.717v30.487l8.44-7.679v-19.706c-2.977-.671-5.813-1.714-8.44-3.102z"
+                                                fill="#f43075"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m102.025 50.245c0-17.576 13.182-32.066 30.195-34.148-1.384-.169-2.79-.267-4.22-.267-19.005 0-34.415 15.409-34.415 34.415 0 13.229 7.452 24.71 18.399 30.472 4.78 2.527 10.239 3.957 16.016 3.957 1.428 0 2.836-.089 4.22-.258-4.214-.517-8.198-1.796-11.796-3.699-10.947-5.762-18.399-17.244-18.399-30.472z"
+                                                fill="#6377e7"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m138.676 34.758-15.634 17.901-5.124-4.152c-2.282-1.847-5.624-1.495-7.468.786-1.846 2.276-1.496 5.62.781 7.468l13.078 10.592 22.365-25.608c1.929-2.209 1.702-5.564-.508-7.493-2.204-1.927-5.563-1.703-7.49.506z"
+                                                fill="#f8af23"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m132.322 187.63c-.29.81-.619 1.589-.978 2.36l7.257 7.257-14.269 14.269-7.257-7.257c-.771.359-1.558.687-2.36.978v10.266h-20.172v-10.266c-.802-.29-1.589-.619-2.36-.978l-7.257 7.257-14.269-14.269 7.257-7.257c-.359-.771-.687-1.551-.978-2.36h-10.266v-20.173h10.266c.29-.802.619-1.589.978-2.36l-7.257-7.257 14.269-14.269 7.257 7.264c.771-.359 1.558-.695 2.36-.985v-10.258h20.173v10.258c.802.29 1.589.626 2.36.985l7.257-7.264 14.269 14.269-7.257 7.257c.359.771.687 1.558.978 2.36h10.258v20.173z"
+                                                  fill="#f46275"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <circle
+                                                  cx="104.629"
+                                                  cy="177.545"
+                                                  fill="#63bce7"
+                                                  r="12.846"
+                                                ></circle>
+                                              </g>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m151.114 152.638h14.843v60h-14.843z"
+                                                fill="#63bce7"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <path
+                                                d="m174.487 131.089h14.843v81.549h-14.843z"
+                                                fill="#f46275"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m44.076 229.481h14.477c.026 0 .051.004.077.004h138.74c.026 0 .051-.004.077-.004h15.488c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5h-10.095c.648-1.011 1.029-2.209 1.029-3.496v-178.34c0-3.584-2.916-6.5-6.5-6.5h-35.558c-4.976-13.868-18.252-23.815-33.811-23.815s-28.835 9.948-33.812 23.815h-35.558c-3.584 0-6.5 2.916-6.5 6.5v178.34c0 1.287.381 2.485 1.029 3.496h-9.083c-.829 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5zm83.924-212.151c18.149 0 32.915 14.766 32.915 32.915 0 12.264-6.743 23.431-17.601 29.146-4.681 2.475-9.977 3.783-15.314 3.783s-10.634-1.308-15.317-3.784c-10.854-5.714-17.598-16.881-17.598-29.145 0-18.15 14.766-32.915 32.915-32.915zm-14.516 65.772c4.543 2.011 9.512 3.072 14.516 3.072s9.974-1.061 14.516-3.072v24.709l-13.506-12.289c-.573-.521-1.447-.521-2.019 0l-13.507 12.289zm-58.354 139.883v-178.34c0-1.93 1.57-3.5 3.5-3.5h34.626c-.762 2.907-1.171 5.957-1.171 9.1 0 13.072 7.034 24.987 18.399 31.342v29.617c0 .594.35 1.132.894 1.372s1.178.137 1.616-.263l15.006-13.653 15.006 13.653c.282.256.644.391 1.01.391.205 0 .412-.042.606-.128.543-.24.894-.778.894-1.372v-29.618c11.366-6.356 18.399-18.27 18.399-31.342 0-3.143-.409-6.192-1.171-9.1h34.626c1.93 0 3.5 1.57 3.5 3.5v178.34c0 1.917-1.55 3.475-3.461 3.496h-138.818c-1.911-.021-3.461-1.579-3.461-3.495z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m35.768 227.981c0-.829-.671-1.5-1.5-1.5h-8.344c-.829 0-1.5.671-1.5 1.5s.671 1.5 1.5 1.5h8.344c.828 0 1.5-.671 1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m230.076 226.481h-8.346c-.828 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5h8.346c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m202.869 238.67h-148.726c-.829 0-1.5.671-1.5 1.5s.671 1.5 1.5 1.5h148.727c.828 0 1.5-.671 1.5-1.5s-.673-1.5-1.501-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m45.133 238.67h-8.344c-.829 0-1.5.671-1.5 1.5s.671 1.5 1.5 1.5h8.344c.829 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m220.428 238.67h-8.346c-.828 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5h8.346c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m70.963 90.645c0 .829.671 1.5 1.5 1.5h31.395c.829 0 1.5-.671 1.5-1.5s-.671-1.5-1.5-1.5h-31.395c-.828 0-1.5.671-1.5 1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m154 92.145h29.687c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5h-29.687c-.828 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m106.296 129.589c-.829 0-1.5.671-1.5 1.5s.671 1.5 1.5 1.5h43.407c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m72.313 63.979h16.937c.829 0 1.5-.671 1.5-1.5s-.671-1.5-1.5-1.5h-16.937c-.829 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m72.313 71.979h20.437c.829 0 1.5-.671 1.5-1.5s-.671-1.5-1.5-1.5h-20.437c-.829 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m167.36 63.979h16.937c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5h-16.937c-.828 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m184.297 68.979h-11.297c-.828 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5h11.297c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m77.63 102.895c-.829 0-1.5.671-1.5 1.5s.671 1.5 1.5 1.5h16.667c.829 0 1.5-.671 1.5-1.5s-.671-1.5-1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m183.687 102.895h-20.187c-.828 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5h20.187c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m72.313 118.895h111.373c.828 0 1.5-.671 1.5-1.5s-.672-1.5-1.5-1.5h-111.373c-.829 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m110.289 57.926 13.078 10.592c.277.225.611.334.943.334.418 0 .834-.174 1.13-.513l22.365-25.608c1.196-1.37 1.788-3.124 1.665-4.939s-.945-3.474-2.316-4.67c-1.369-1.195-3.125-1.787-4.938-1.665-1.817.122-3.476.944-4.671 2.313l-14.682 16.813-4.001-3.243c-1.416-1.146-3.194-1.674-5-1.48-1.809.19-3.435 1.074-4.577 2.487-2.363 2.917-1.914 7.213 1.004 9.579zm1.329-7.69c.64-.791 1.548-1.285 2.56-1.392.135-.015.271-.021.405-.021.869 0 1.706.295 2.392.85l5.124 4.152c.625.506 1.543.429 2.074-.179l15.633-17.902c.668-.766 1.596-1.225 2.612-1.293 1.024-.068 1.998.263 2.764.931.767.669 1.227 1.598 1.296 2.613.068 1.016-.263 1.997-.932 2.763l-21.415 24.52-11.954-9.682c-1.632-1.324-1.884-3.727-.559-5.36z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m142.585 165.957h-9.231c-.071-.175-.145-.351-.221-.528l6.528-6.529c.586-.585.586-1.536 0-2.121l-14.266-14.266c-.586-.586-1.535-.586-2.121 0l-6.529 6.529c-.177-.076-.353-.15-.528-.221v-9.231c0-.829-.671-1.5-1.5-1.5h-20.175c-.829 0-1.5.671-1.5 1.5v9.231c-.175.071-.351.145-.528.221l-6.529-6.529c-.586-.586-1.535-.586-2.121 0l-14.267 14.266c-.281.281-.439.663-.439 1.061s.158.779.439 1.061l6.529 6.529c-.076.177-.149.353-.221.528h-9.231c-.829 0-1.5.671-1.5 1.5v20.176c0 .829.671 1.5 1.5 1.5h9.231c.071.175.145.351.221.528l-6.529 6.529c-.281.281-.439.663-.439 1.061s.158.779.439 1.061l14.267 14.266c.586.586 1.535.586 2.121 0l6.529-6.528c.177.076.353.149.528.221v9.231c0 .829.671 1.5 1.5 1.5h20.175c.829 0 1.5-.671 1.5-1.5v-9.231c.175-.071.351-.145.528-.221l6.529 6.528c.586.586 1.535.586 2.121 0l14.266-14.266c.586-.585.586-1.536 0-2.121l-6.528-6.529c.076-.177.149-.354.221-.528h9.231c.828 0 1.5-.671 1.5-1.5v-20.176c0-.831-.672-1.502-1.5-1.502zm-1.5 20.176h-8.76c-.63 0-1.193.394-1.409.986-.265.725-.57 1.457-.935 2.237-.267.572-.147 1.25.299 1.695l6.199 6.199-12.145 12.145-6.199-6.199c-.446-.446-1.123-.565-1.695-.299-.778.363-1.51.668-2.237.934-.592.216-.986.779-.986 1.409v8.76h-17.175v-8.76c0-.63-.394-1.193-.986-1.409-.727-.265-1.459-.57-2.238-.934-.57-.266-1.248-.147-1.694.299l-6.199 6.199-12.146-12.145 6.199-6.199c.446-.446.565-1.123.299-1.694-.363-.779-.668-1.511-.934-2.238-.216-.592-.779-.986-1.409-.986h-8.76v-17.176h8.76c.63 0 1.193-.394 1.409-.986.265-.727.57-1.459.934-2.238.267-.571.147-1.249-.299-1.694l-6.199-6.199 12.145-12.145 6.199 6.199c.446.446 1.123.566 1.695.298.778-.363 1.509-.668 2.236-.933.592-.216.987-.779.987-1.41v-8.76h17.175v8.76c0 .631.395 1.194.987 1.41.728.265 1.458.57 2.235.933.572.269 1.25.147 1.696-.298l6.199-6.199 12.145 12.145-6.199 6.199c-.446.446-.565 1.124-.299 1.695.364.78.67 1.512.935 2.237.216.592.779.986 1.409.986h8.76v17.176z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m104.629 163.199c-7.911 0-14.347 6.436-14.347 14.346s6.436 14.346 14.347 14.346 14.346-6.436 14.346-14.346-6.435-14.346-14.346-14.346zm0 25.692c-6.256 0-11.347-5.09-11.347-11.346s5.09-11.346 11.347-11.346 11.346 5.09 11.346 11.346-5.089 11.346-11.346 11.346z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m165.957 151.138h-14.843c-.828 0-1.5.671-1.5 1.5v60c0 .829.672 1.5 1.5 1.5h14.843c.828 0 1.5-.671 1.5-1.5v-60c0-.828-.672-1.5-1.5-1.5zm-1.5 60h-11.843v-57h11.843z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                            <g>
+                                              <g>
+                                                <path
+                                                  d="m189.33 129.589h-14.844c-.828 0-1.5.671-1.5 1.5v81.549c0 .829.672 1.5 1.5 1.5h14.844c.828 0 1.5-.671 1.5-1.5v-81.549c0-.828-.672-1.5-1.5-1.5zm-1.5 81.549h-11.844v-78.549h11.844z"
+                                                  fill="#231f20"
+                                                ></path>
+                                              </g>
+                                            </g>
+                                          </g>
+                                        </g>
+                                      </svg>
+                                    </span>
+                                  </div>
+
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> Web Development </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      A Digital Company specializing in web
+                                      development provides expert services to
+                                      create and enhance websites, ensuring a
+                                      seamless user experience and effective
+                                      online presence.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-498f4c9d elementor-view-default elementor-position-top elementor-mobile-position-top elementor-widget elementor-widget-icon-box"
+                              data-id="498f4c9d"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-icon">
+                                    <span
+                                      class="elementor-icon elementor-animation-"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        id="Layer_1"
+                                        height="512"
+                                        viewBox="0 0 256 256"
+                                        width="512"
+                                      >
+                                        <g>
+                                          <path
+                                            d="m194.076 82.919h-53.294v-7.251c0-14.124 11.449-25.573 25.573-25.573h2.148c14.124 0 25.573 11.449 25.573 25.573z"
+                                            fill="#f46275"
+                                          ></path>
+                                          <circle
+                                            cx="167.429"
+                                            cy="35.214"
+                                            fill="#9e9e9e"
+                                            r="14.881"
+                                          ></circle>
+                                          <circle
+                                            cx="88.571"
+                                            cy="35.214"
+                                            fill="#9e9e9e"
+                                            r="14.881"
+                                          ></circle>
+                                          <g>
+                                            <path
+                                              d="m91.749 35.214c0-4.819 2.3-9.09 5.852-11.809-2.506-1.919-5.629-3.072-9.029-3.072-8.219 0-14.881 6.662-14.881 14.881s6.662 14.881 14.881 14.881c3.4 0 6.523-1.153 9.029-3.072-3.552-2.719-5.852-6.99-5.852-11.809z"
+                                              fill="#707070"
+                                            ></path>
+                                          </g>
+                                          <g>
+                                            <path
+                                              d="m164.251 35.214c0-4.819-2.3-9.09-5.852-11.809 2.506-1.919 5.629-3.072 9.029-3.072 8.219 0 14.881 6.662 14.881 14.881s-6.662 14.881-14.881 14.881c-3.4 0-6.523-1.153-9.029-3.072 3.552-2.719 5.852-6.99 5.852-11.809z"
+                                              fill="#cecece"
+                                            ></path>
+                                          </g>
+                                          <path
+                                            d="m115.218 82.919h-53.294v-7.251c0-14.124 11.449-25.573 25.573-25.573h2.148c14.124 0 25.573 11.449 25.573 25.573z"
+                                            fill="#f46275"
+                                          ></path>
+                                          <g>
+                                            <path
+                                              d="m97.6 51.363c-2.505-.819-5.177-1.268-7.955-1.268h-2.148c-14.124 0-25.573 11.449-25.573 25.573v7.251h18.059v-7.251c-.001-11.345 7.39-20.959 17.617-24.305z"
+                                              fill="#f43075"
+                                            ></path>
+                                          </g>
+                                          <g>
+                                            <path
+                                              d="m158.4 51.363c2.505-.819 5.177-1.268 7.955-1.268h2.148c14.124 0 25.573 11.449 25.573 25.573v7.251h-18.059v-7.251c.001-11.345-7.39-20.959-17.617-24.305z"
+                                              fill="#f48875"
+                                            ></path>
+                                          </g>
+                                          <path
+                                            d="m195.769 96.919h-135.538c-3.866 0-7-3.134-7-7 0-3.866 3.134-7 7-7h135.539c3.866 0 7 3.134 7 7-.001 3.866-3.135 7-7.001 7z"
+                                            fill="#9e9e9e"
+                                          ></path>
+                                          <g>
+                                            <path
+                                              d="m195.769 82.919h-18.059c3.866 0 7 3.134 7 7s-3.134 7-7 7h18.059c3.866 0 7-3.134 7-7 0-3.865-3.134-7-7-7z"
+                                              fill="#cecece"
+                                            ></path>
+                                          </g>
+                                          <g>
+                                            <path
+                                              d="m71.289 89.919c0-3.866 3.134-7 7-7h-18.058c-3.866 0-7 3.134-7 7s3.134 7 7 7h18.059c-3.867 0-7.001-3.133-7.001-7z"
+                                              fill="#707070"
+                                            ></path>
+                                          </g>
+                                          <path
+                                            d="m193.667 96.919h-65.667-65.667l23.204 70.725c.674 2.053 2.59 3.441 4.751 3.441h6.462v31.083l62.5-12.417v-18.667h6.462c2.161 0 4.077-1.388 4.751-3.441z"
+                                            fill="#63bce7"
+                                          ></path>
+                                          <g>
+                                            <path
+                                              d="m175.608 96.919-23.204 70.725c-.674 2.053-2.59 3.441-4.751 3.441h-6.462v22.254l18.059-3.588v-18.667h6.462c2.161 0 4.077-1.388 4.751-3.441l23.204-70.725h-18.059z"
+                                              fill="#67dceb"
+                                            ></path>
+                                          </g>
+                                          <g>
+                                            <path
+                                              d="m108.347 171.086c-2.161 0-4.077-1.388-4.751-3.441l-23.204-70.726h-18.059l23.204 70.725c.674 2.053 2.59 3.441 4.751 3.441h6.462v31.083l18.059-3.588v-27.496h-6.462z"
+                                              fill="#6377e7"
+                                            ></path>
+                                          </g>
+                                          <circle
+                                            cx="128"
+                                            cy="31.226"
+                                            fill="#9e9e9e"
+                                            r="16.125"
+                                          ></circle>
+                                          <path
+                                            d="m156.875 82.919h-57.75v-9.996c0-14.124 11.449-25.573 25.573-25.573h6.604c14.124 0 25.573 11.449 25.573 25.573z"
+                                            fill="#f8af23"
+                                          ></path>
+                                          <g>
+                                            <circle
+                                              cx="128"
+                                              cy="207.636"
+                                              fill="#f8af23"
+                                              r="21.717"
+                                            ></circle>
+                                            <g>
+                                              <path
+                                                d="m139.014 207.623v7.559c0 .589-.221 1.1-.662 1.533-.442.433-.966.65-1.572.65h-6.65v5.325c0 .606-.217 1.121-.649 1.546-.433.425-.944.636-1.533.636-.623 0-1.152-.212-1.584-.636-.433-.425-.65-.939-.65-1.546v-5.377h-6.598c-.589 0-1.1-.212-1.533-.636-.433-.425-.65-.939-.65-1.546 0-.606.212-1.121.636-1.546.425-.424.939-.636 1.546-.636h15.43v-3.143h-15.378c-.606 0-1.121-.208-1.545-.623-.425-.415-.637-.935-.637-1.559v-7.533c0-.606.212-1.121.637-1.546.424-.424.939-.636 1.545-.636h6.546v-5.325c0-.589.204-1.1.611-1.533s.957-.649 1.65-.649c.589 0 1.095.212 1.52.636.424.425.636.939.636 1.546v5.325h6.702c.606 0 1.13.217 1.572.649.442.433.663.944.663 1.533 0 .606-.221 1.13-.663 1.572s-.966.663-1.572.663h-15.43v3.117h15.378c.606 0 1.13.217 1.572.65.441.431.662.942.662 1.53z"
+                                                fill="#3f3679"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <circle
+                                            cx="36.407"
+                                            cy="142.303"
+                                            fill="#f8af23"
+                                            r="21.717"
+                                          ></circle>
+                                          <g>
+                                            <circle
+                                              cx="219.593"
+                                              cy="142.303"
+                                              fill="#f8af23"
+                                              r="21.717"
+                                            ></circle>
+                                            <g fill="#3f3679">
+                                              <path
+                                                d="m27.7 239.399h-18.172c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5h18.172c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                              ></path>
+                                              <path
+                                                d="m246.472 239.399h-18.172c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5h18.172c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                              ></path>
+                                              <path
+                                                d="m213.788 239.399h-171.576c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5h171.576c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5z"
+                                              ></path>
+                                              <path
+                                                d="m9.528 230.854h7.803c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5h-7.803c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5z"
+                                              ></path>
+                                              <path
+                                                d="m237.169 229.354c0 .828.672 1.5 1.5 1.5h7.803c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5h-7.803c-.828 0-1.5.671-1.5 1.5z"
+                                              ></path>
+                                              <path
+                                                d="m60.23 98.42h1.016l22.865 69.691c.877 2.677 3.358 4.475 6.176 4.475h4.962v29.584c0 .449.201.874.548 1.159.271.223.608.341.952.341.098 0 .195-.01.292-.028l8.445-1.678c-.458 1.816-.704 3.716-.704 5.673 0 8.663 4.772 16.228 11.823 20.217h-88.905c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5h200.6c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5h-88.906c7.05-3.989 11.823-11.554 11.823-20.217 0-5.185-1.709-9.978-4.593-13.846l12.918-2.566c.702-.14 1.208-.756 1.208-1.472v-17.167h4.962c2.817 0 5.299-1.798 6.175-4.474l22.866-69.692h1.016c4.687 0 8.5-3.813 8.5-8.5s-3.813-8.5-8.5-8.5h-.193v-5.752c0-12.536-8.565-23.105-20.15-26.172 4.996-2.809 8.383-8.154 8.383-14.282 0-9.032-7.349-16.381-16.381-16.381s-16.381 7.349-16.381 16.381c0 6.125 3.385 11.467 8.376 14.277-3.217.846-6.243 2.3-8.984 4.301-3.649-3.65-8.333-6.263-13.567-7.362 5.226-3.062 8.753-8.722 8.753-15.204 0-9.719-7.906-17.625-17.625-17.625s-17.625 7.906-17.625 17.625c0 6.482 3.527 12.142 8.753 15.204-5.234 1.099-9.917 3.712-13.566 7.361-2.742-2.001-5.771-3.451-8.989-4.298 4.993-2.81 8.379-8.153 8.379-14.279 0-9.032-7.349-16.381-16.381-16.381s-16.381 7.349-16.381 16.381c0 6.128 3.388 11.473 8.383 14.282-11.585 3.067-20.15 13.636-20.15 26.172v5.752h-.193c-4.687 0-8.5 3.813-8.5 8.5s3.814 8.5 8.5 8.5zm67.77 129.434c-11.147 0-20.217-9.069-20.217-20.217s9.07-20.217 20.217-20.217 20.217 9.069 20.217 20.217-9.07 20.217-20.217 20.217zm41.036-60.676c-.472 1.44-1.808 2.408-3.324 2.408h-6.462c-.828 0-1.5.672-1.5 1.5v17.436l-13.39 2.66c-4.2-4.176-9.984-6.761-16.36-6.761-9.631 0-17.91 5.896-21.421 14.268l-8.329 1.655v-29.257c0-.828-.672-1.5-1.5-1.5h-6.462c-1.517 0-2.853-.968-3.325-2.409l-22.559-68.758h127.191zm-14.988-131.964c0-7.378 6.003-13.381 13.381-13.381s13.381 6.003 13.381 13.381-6.003 13.381-13.381 13.381-13.381-6.003-13.381-13.381zm12.306 16.381h2.148c13.274 0 24.073 10.799 24.073 24.073v5.752h-5.651v-10.497c0-.828-.672-1.5-1.5-1.5s-1.5.672-1.5 1.5v10.497h-25.55v-8.496c0-6.381-2.224-12.249-5.93-16.881 4.079-2.902 8.857-4.448 13.91-4.448zm-52.979-20.369c0-8.064 6.561-14.625 14.625-14.625s14.625 6.561 14.625 14.625-6.561 14.625-14.625 14.625-14.625-6.561-14.625-14.625zm11.323 17.625h6.604c13.274 0 24.073 10.799 24.073 24.073v8.496h-6.375v-11.5c0-.828-.672-1.5-1.5-1.5s-1.5.672-1.5 1.5v11.5h-36v-11.5c0-.828-.672-1.5-1.5-1.5s-1.5.672-1.5 1.5v11.5h-6.375v-8.496c0-13.275 10.799-24.073 24.073-24.073zm-49.508-13.637c0-7.378 6.003-13.381 13.381-13.381s13.381 6.003 13.381 13.381-6.003 13.381-13.381 13.381-13.381-6.003-13.381-13.381zm-11.766 40.454c0-13.274 10.799-24.073 24.073-24.073h2.148c5.049 0 9.83 1.546 13.91 4.448-3.706 4.633-5.93 10.5-5.93 16.881v8.496h-25.55v-10.497c0-.828-.672-1.5-1.5-1.5s-1.5.672-1.5 1.5v10.497h-5.651zm-3.194 8.752h38.895 57.75 38.895c3.032 0 5.5 2.467 5.5 5.5s-2.468 5.5-5.5 5.5h-2.103-131.334-2.103c-3.032 0-5.5-2.467-5.5-5.5s2.468-5.5 5.5-5.5z"
+                                              ></path>
+                                              <path
+                                                d="m36.406 165.521c12.802 0 23.217-10.415 23.217-23.218 0-12.802-10.415-23.217-23.217-23.217s-23.217 10.415-23.217 23.217 10.415 23.218 23.217 23.218zm0-43.435c11.147 0 20.217 9.069 20.217 20.217s-9.069 20.218-20.217 20.218-20.217-9.069-20.217-20.218c0-11.148 9.07-20.217 20.217-20.217z"
+                                              ></path>
+                                              <path
+                                                d="m196.377 142.303c0 12.803 10.415 23.218 23.217 23.218s23.217-10.415 23.217-23.218c0-12.802-10.415-23.217-23.217-23.217s-23.217 10.415-23.217 23.217zm23.217-20.217c11.147 0 20.217 9.069 20.217 20.217s-9.069 20.218-20.217 20.218-20.217-9.069-20.217-20.218c0-11.148 9.069-20.217 20.217-20.217z"
+                                              ></path>
+                                            </g>
+                                          </g>
+                                          <g>
+                                            <path
+                                              d="m32.791 129.354c1.252 1.184 1.879 2.855 1.879 5.01s-.627 3.824-1.879 5.01-2.863 1.778-4.829 1.778c-2.019 0-3.655-.592-4.909-1.778-1.252-1.186-1.879-2.855-1.879-5.01s.627-3.826 1.879-5.01c1.254-1.186 2.89-1.778 4.909-1.778 1.966 0 3.577.592 4.829 1.778zm12.412 2.953-12.409 22.792c-.513.942-1.499 1.528-2.571 1.528-2.221 0-3.633-2.376-2.571-4.327l12.408-22.792c.513-.942 1.499-1.528 2.571-1.528h.001c2.221-.001 3.633 2.376 2.571 4.327zm-18.857 4.016c.377.472.889.707 1.535.707.672 0 1.211-.235 1.615-.707.405-.47.607-1.124.607-1.959s-.202-1.489-.607-1.96c-.404-.47-.943-.707-1.615-.707-.646 0-1.159.237-1.535.707-.378.472-.567 1.126-.567 1.96.001.835.189 1.488.567 1.959zm23.436 8.869c1.239 1.186 1.858 2.855 1.858 5.01 0 2.156-.619 3.833-1.858 5.031-1.24 1.199-2.855 1.798-4.849 1.798-1.966 0-3.576-.598-4.829-1.798-1.252-1.198-1.877-2.875-1.877-5.031 0-2.155.625-3.824 1.877-5.01 1.254-1.184 2.863-1.778 4.829-1.778 1.993 0 3.609.593 4.849 1.778zm-6.425 7.011c.377.472.903.707 1.576.707.646 0 1.165-.235 1.555-.707s.586-1.138.586-2.001c0-.835-.196-1.487-.586-1.959s-.909-.707-1.555-.707c-.674 0-1.199.235-1.576.707s-.565 1.124-.565 1.959c0 .863.188 1.529.565 2.001z"
+                                              fill="#3f3679"
+                                            ></path>
+                                          </g>
+                                          <g>
+                                            <path
+                                              d="m215.978 129.354c1.252 1.184 1.879 2.855 1.879 5.01s-.627 3.824-1.879 5.01-2.863 1.778-4.829 1.778c-2.019 0-3.656-.592-4.909-1.778-1.252-1.186-1.879-2.855-1.879-5.01s.627-3.826 1.879-5.01c1.254-1.186 2.89-1.778 4.909-1.778 1.966 0 3.577.592 4.829 1.778zm12.412 2.953-12.409 22.792c-.513.942-1.499 1.528-2.571 1.528-2.221 0-3.633-2.376-2.571-4.327l12.408-22.792c.513-.942 1.499-1.528 2.571-1.528h.001c2.221-.001 3.633 2.376 2.571 4.327zm-18.857 4.016c.377.472.889.707 1.535.707.672 0 1.211-.235 1.615-.707.405-.47.607-1.124.607-1.959s-.202-1.489-.607-1.96c-.404-.47-.943-.707-1.615-.707-.646 0-1.159.237-1.535.707-.378.472-.567 1.126-.567 1.96.001.835.189 1.488.567 1.959zm23.436 8.869c1.239 1.186 1.858 2.855 1.858 5.01 0 2.156-.619 3.833-1.858 5.031-1.24 1.199-2.855 1.798-4.849 1.798-1.966 0-3.576-.598-4.829-1.798-1.252-1.198-1.877-2.875-1.877-5.031 0-2.155.625-3.824 1.877-5.01 1.254-1.184 2.863-1.778 4.829-1.778 1.993 0 3.608.593 4.849 1.778zm-6.425 7.011c.377.472.903.707 1.576.707.646 0 1.165-.235 1.555-.707s.586-1.138.586-2.001c0-.835-.196-1.487-.586-1.959s-.909-.707-1.555-.707c-.674 0-1.199.235-1.576.707s-.565 1.124-.565 1.959c-.001.863.188 1.529.565 2.001z"
+                                              fill="#3f3679"
+                                            ></path>
+                                          </g>
+                                        </g>
+                                      </svg>
+                                    </span>
+                                  </div>
+
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> App And Software </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      A Digital Company specializing in app and
+                                      software development offers innovative and
+                                      customized solutions to meet your business
+                                      needs, leveraging cutting-edge technology
+                                      for optimal results.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-76f5e1a elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="76f5e1a"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-04b929f"
+                          data-id="04b929f"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-db05d52 elementor-widget elementor-widget-heading"
+                              data-id="db05d52"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h4
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  Web Development
+                                </h4>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-e46e472 elementor-widget elementor-widget-text-editor"
+                              data-id="e46e472"
+                              data-element_type="widget"
+                              data-widget_type="text-editor.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <p>
+                                  Web Development Company that offers
+                                  comprehensive solutions for businesses. With
+                                  expertise in Web Development, they create
+                                  customized websites tailored to meet client
+                                  requirements. Besttech Digital Company ensures
+                                  the use of cutting-edge technologies,
+                                  responsive design, and seamless user
+                                  experience. Their team of skilled
+                                  professionals delivers high-quality, visually
+                                  appealing, and functional websites. Whether
+                                  it’s an e-commerce platform, corporate
+                                  website, or web application, Besttech Digital
+                                  Solutions is dedicated to providing innovative
+                                  Web Development Solutions that help businesses
+                                  thrive in the digital landscape.
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-6102def elementor-mobile-align-center elementor-align-left elementor-widget elementor-widget-button"
+                              data-id="6102def"
+                              data-element_type="widget"
+                              data-widget_type="button.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-button-wrapper">
+                                  <a
+                                    class="elementor-button elementor-button-link elementor-size-sm"
+                                    href="https://www.besttech.in/web-development-company/"
+                                  >
+                                    <span
+                                      class="elementor-button-content-wrapper"
+                                    >
+                                      <span class="elementor-button-icon">
+                                        <i
+                                          aria-hidden="true"
+                                          class="fas fa-chevron-right"
+                                        ></i>
+                                      </span>
+                                      <span class="elementor-button-text"
+                                        >Go to Web Development</span
+                                      >
+                                    </span>
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-56e960b"
+                          data-id="56e960b"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-d864f94 elementor-widget elementor-widget-image"
+                              data-id="d864f94"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Web-Development_.webp"
+                                  class="attachment-large size-large wp-image-14793"
+                                  alt="Web Development-digital company"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Web-Development_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Web-Development_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Web-Development_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-d5aed57 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="d5aed57"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-100 elementor-top-column elementor-element elementor-element-749a117"
+                          data-id="749a117"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-6309bb8 elementor-widget elementor-widget-heading"
+                              data-id="6309bb8"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h2
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  Business With Our Digital Company Services In
+                                  Chennai
+                                </h2>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-6def8e9 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="6def8e9"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-e418c40"
+                          data-id="e418c40"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-4b8f70f elementor-widget elementor-widget-image"
+                              data-id="4b8f70f"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Branding_.webp"
+                                  class="attachment-large size-large wp-image-14782"
+                                  alt="Branding-digital company"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Branding_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Branding_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Branding_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-f820d4e elementor-widget elementor-widget-icon-box"
+                              data-id="f820d4e"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> Branding </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      Digital Company branding is essential for
+                                      establishing a unique and recognizable
+                                      identity in the online space. It involves
+                                      creating a consistent visual and messaging
+                                      strategy to convey your brand's values and
+                                      offerings, enhancing customer engagement
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-cead117"
+                          data-id="cead117"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-11eb7c5 elementor-widget elementor-widget-image"
+                              data-id="11eb7c5"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Strategic-Planning_.webp"
+                                  class="attachment-large size-large wp-image-14791"
+                                  alt="Strategic Planning-digital company"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Strategic-Planning_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Strategic-Planning_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Strategic-Planning_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-e6da714 elementor-widget elementor-widget-icon-box"
+                              data-id="e6da714"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h5 class="elementor-icon-box-title">
+                                      <span> Strategic Planning </span>
+                                    </h5>
+
+                                    <p class="elementor-icon-box-description">
+                                      Digital Marketing strategic planning
+                                      involves developing a comprehensive
+                                      roadmap to achieve business objectives,
+                                      incorporating digital marketing,
+                                      technology, and innovation to drive growth
+                                      and competitive advantage.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-49c8d01"
+                          data-id="49c8d01"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-b6fbf5d elementor-widget elementor-widget-image"
+                              data-id="b6fbf5d"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Video-production_.webp"
+                                  class="attachment-large size-large wp-image-14792"
+                                  alt="Video production- digital company"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Video-production_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Video-production_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Video-production_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-0ce0c1c elementor-widget elementor-widget-icon-box"
+                              data-id="0ce0c1c"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h5 class="elementor-icon-box-title">
+                                      <span> Video Production </span>
+                                    </h5>
+
+                                    <p class="elementor-icon-box-description">
+                                      Digital Marketing video production
+                                      combines the power of visual storytelling
+                                      with marketing strategies to create
+                                      engaging videos that promote products,
+                                      services, or brands across digital
+                                      platforms effectively.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-f0b8887 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="f0b8887"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-da717b4"
+                          data-id="da717b4"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-9c5e35b elementor-widget elementor-widget-image"
+                              data-id="9c5e35b"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Digital-Marketing.webp"
+                                  class="attachment-large size-large wp-image-14786"
+                                  alt="Digital Marketing- digital company"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Digital-Marketing.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Digital-Marketing-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Digital-Marketing-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-c48a753"
+                          data-id="c48a753"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-ad0dad0 elementor-widget elementor-widget-heading"
+                              data-id="ad0dad0"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h5
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  Digital Marketing
+                                </h5>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-cfe7bb4 elementor-widget elementor-widget-text-editor"
+                              data-id="cfe7bb4"
+                              data-element_type="widget"
+                              data-widget_type="text-editor.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <p>
+                                  Besttech Digital Company offers comprehensive
+                                  digital marketing services to help businesses
+                                  establish a strong online presence and drive
+                                  growth. With a focus on innovation and
+                                  tailored strategies, their team of experts
+                                  provides result-oriented solutions in areas
+                                  such as search engine optimization (SEO),
+                                  social media marketing, pay-per-click (PPC)
+                                  advertising, content marketing, and more.
+                                  Besttech Digital Company leverages industry
+                                  best practices and cutting-edge techniques to
+                                  maximize brand visibility, generate qualified
+                                  leads, and achieve measurable business goals.
+                                  Trust<a
+                                    href="https://en.wikipedia.org/wiki/Digital_marketing"
+                                  >
+                                    them</a
+                                  >
+                                  to deliver effective digital marketing
+                                  solutions that drive success in the
+                                  ever-evolving digital landscape.
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-83fedab elementor-mobile-align-center elementor-align-left elementor-widget elementor-widget-button"
+                              data-id="83fedab"
+                              data-element_type="widget"
+                              data-widget_type="button.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-button-wrapper">
+                                  <a
+                                    class="elementor-button elementor-button-link elementor-size-sm"
+                                    href="https://www.besttech.in/digital-marketing-agency/"
+                                  >
+                                    <span
+                                      class="elementor-button-content-wrapper"
+                                    >
+                                      <span class="elementor-button-icon">
+                                        <i
+                                          aria-hidden="true"
+                                          class="fas fa-chevron-right"
+                                        ></i>
+                                      </span>
+                                      <span class="elementor-button-text"
+                                        >Go to Digital Marketing</span
+                                      >
+                                    </span>
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-4a21f8f elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="4a21f8f"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-636835c"
+                          data-id="636835c"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-5841a1f elementor-widget elementor-widget-image"
+                              data-id="5841a1f"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Content-Creation_.webp"
+                                  class="attachment-large size-large wp-image-14783"
+                                  alt="Content Creation"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Content-Creation_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Content-Creation_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Content-Creation_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-d91493e elementor-widget elementor-widget-icon-box"
+                              data-id="d91493e"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> Content Creation </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      Digital Company content creation is the
+                                      process of producing original and engaging
+                                      material for various platforms. It
+                                      involves generating unique ideas,
+                                      conducting research, and crafting
+                                      compelling content
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-bef8de0"
+                          data-id="bef8de0"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-19e063e elementor-widget elementor-widget-image"
+                              data-id="19e063e"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Database-marketing_.webp"
+                                  class="attachment-large size-large wp-image-14785"
+                                  alt="Database marketing"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Database-marketing_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Database-marketing_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Database-marketing_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-3e7846b elementor-widget elementor-widget-icon-box"
+                              data-id="3e7846b"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> Database Marketing </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      Besttech Digital specializes in database
+                                      marketing services. They help businesses
+                                      effectively utilize their customer
+                                      databases to create targeted marketing
+                                      campaigns and drive growth.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-33 elementor-top-column elementor-element elementor-element-f88fb0f"
+                          data-id="f88fb0f"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-618f244 elementor-widget elementor-widget-image"
+                              data-id="618f244"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/SEO-strategy_.webp"
+                                  class="attachment-large size-large wp-image-14790"
+                                  alt="SEO strategy"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/SEO-strategy_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/SEO-strategy_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/SEO-strategy_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-d20bf22 elementor-widget elementor-widget-icon-box"
+                              data-id="d20bf22"
+                              data-element_type="widget"
+                              data-widget_type="icon-box.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-icon-box-wrapper">
+                                  <div class="elementor-icon-box-content">
+                                    <h4 class="elementor-icon-box-title">
+                                      <span> SEO Strategy </span>
+                                    </h4>
+
+                                    <p class="elementor-icon-box-description">
+                                      A digital company's SEO strategy involves
+                                      optimizing website content, building
+                                      quality backlinks, conducting keyword
+                                      research, and implementing on-page and
+                                      off-page optimization techniques to
+                                      improve search engine rankings and drive
+                                      organic traffic.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-c883863 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="c883863"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-6e94ed6"
+                          data-id="6e94ed6"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-2d62a9e elementor-widget elementor-widget-heading"
+                              data-id="2d62a9e"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h6
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  Graphic Designing
+                                </h6>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-735ffda elementor-widget elementor-widget-text-editor"
+                              data-id="735ffda"
+                              data-element_type="widget"
+                              data-widget_type="text-editor.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <p>
+                                  Besttech Digital Solutions company for graphic
+                                  designing services. With their expertise and
+                                  creativity, they deliver innovative and
+                                  visually appealing designs that captivate
+                                  audiences. Whether it’s logo design, branding,
+                                  or marketing collateral, Besttech Digital
+                                  Company provides unique solutions tailored to
+                                  meet your business needs. Their commitment to
+                                  quality and originality ensures that your
+                                  designs stand out from the competition.
+                                  Partner with Besttech Digital Solutions for
+                                  exceptional graphic designing services that
+                                  make a lasting impression.
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-c7ee112 elementor-mobile-align-center elementor-align-left elementor-widget elementor-widget-button"
+                              data-id="c7ee112"
+                              data-element_type="widget"
+                              data-widget_type="button.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-button-wrapper">
+                                  <a
+                                    class="elementor-button elementor-button-link elementor-size-sm"
+                                    href="https://www.besttech.in/graphics-design-services/"
+                                  >
+                                    <span
+                                      class="elementor-button-content-wrapper"
+                                    >
+                                      <span class="elementor-button-icon">
+                                        <i
+                                          aria-hidden="true"
+                                          class="fas fa-chevron-right"
+                                        ></i>
+                                      </span>
+                                      <span class="elementor-button-text"
+                                        >Go to Graphic designing</span
+                                      >
+                                    </span>
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-e83d6b4"
+                          data-id="e83d6b4"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-d9b3df1 elementor-widget elementor-widget-image"
+                              data-id="d9b3df1"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/Graphic-designing_.webp"
+                                  class="attachment-large size-large wp-image-14787"
+                                  alt="Graphic designing"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Graphic-designing_.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Graphic-designing_-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/Graphic-designing_-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-1493ac8 elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="1493ac8"
+                      data-element_type="section"
+                      data-settings='{"background_background":"classic"}'
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-100 elementor-top-column elementor-element elementor-element-a1cf838"
+                          data-id="a1cf838"
+                          data-element_type="column"
+                          data-settings='{"background_background":"classic"}'
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <section
+                              class="elementor-section elementor-inner-section elementor-element elementor-element-22e7572 elementor-section-content-middle elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                              data-id="22e7572"
+                              data-element_type="section"
+                            >
+                              <div
+                                class="elementor-container elementor-column-gap-default"
+                              >
+                                <div
+                                  class="elementor-column elementor-col-50 elementor-inner-column elementor-element elementor-element-93a2ac2"
+                                  data-id="93a2ac2"
+                                  data-element_type="column"
+                                >
+                                  <div
+                                    class="elementor-widget-wrap elementor-element-populated"
+                                  >
+                                    <div
+                                      class="elementor-element elementor-element-66f30fa elementor-widget elementor-widget-heading"
+                                      data-id="66f30fa"
+                                      data-element_type="widget"
+                                      data-widget_type="heading.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <h5
+                                          class="elementor-heading-title elementor-size-default"
+                                        >
+                                          Would you like to start a project with
+                                          us?
+                                        </h5>
+                                      </div>
+                                    </div>
+                                    <div
+                                      class="elementor-element elementor-element-efeb623 elementor-widget elementor-widget-text-editor"
+                                      data-id="efeb623"
+                                      data-element_type="widget"
+                                      data-widget_type="text-editor.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <p>We Assure&nbsp; A Best Services</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div
+                                  class="elementor-column elementor-col-50 elementor-inner-column elementor-element elementor-element-14cd593"
+                                  data-id="14cd593"
+                                  data-element_type="column"
+                                >
+                                  <div
+                                    class="elementor-widget-wrap elementor-element-populated"
+                                  >
+                                    <div
+                                      class="elementor-element elementor-element-b30ac09 elementor-align-center elementor-tablet-align-center elementor-widget elementor-widget-button"
+                                      data-id="b30ac09"
+                                      data-element_type="widget"
+                                      data-widget_type="button.default"
+                                    >
+                                      <div class="elementor-widget-container">
+                                        <div class="elementor-button-wrapper">
+                                          <a
+                                            class="elementor-button elementor-size-sm"
+                                            role="button"
+                                          >
+                                            <span
+                                              class="elementor-button-content-wrapper"
+                                            >
+                                              <span
+                                                class="elementor-button-text"
+                                                >Get Quote</span
+                                              >
+                                            </span>
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </section>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section
+                      class="elementor-section elementor-top-section elementor-element elementor-element-16ea7ce elementor-section-boxed elementor-section-height-default elementor-section-height-default"
+                      data-id="16ea7ce"
+                      data-element_type="section"
+                    >
+                      <div
+                        class="elementor-container elementor-column-gap-default"
+                      >
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-da8639e"
+                          data-id="da8639e"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-17a5775 elementor-widget elementor-widget-image"
+                              data-id="17a5775"
+                              data-element_type="widget"
+                              data-widget_type="image.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="500"
+                                  height="500"
+                                  src="https://www.besttech.in/wp-content/uploads/2022/02/App.webp"
+                                  class="attachment-full size-full wp-image-14780"
+                                  alt="App"
+                                  srcset="
+                                    https://www.besttech.in/wp-content/uploads/2022/02/App.webp         500w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/App-300x300.webp 300w,
+                                    https://www.besttech.in/wp-content/uploads/2022/02/App-150x150.webp 150w
+                                  "
+                                  sizes="(max-width: 500px) 100vw, 500px"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="elementor-column elementor-col-50 elementor-top-column elementor-element elementor-element-2c7804b"
+                          data-id="2c7804b"
+                          data-element_type="column"
+                        >
+                          <div
+                            class="elementor-widget-wrap elementor-element-populated"
+                          >
+                            <div
+                              class="elementor-element elementor-element-532683f elementor-widget elementor-widget-heading"
+                              data-id="532683f"
+                              data-element_type="widget"
+                              data-widget_type="heading.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <h6
+                                  class="elementor-heading-title elementor-size-default"
+                                >
+                                  App &amp; Software
+                                </h6>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-a3967b3 elementor-widget elementor-widget-text-editor"
+                              data-id="a3967b3"
+                              data-element_type="widget"
+                              data-widget_type="text-editor.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <p>
+                                  Besttech Digital Solutions is a leading
+                                  company specializing in app and software
+                                  development. With a team of skilled
+                                  professionals, they deliver innovative and
+                                  customized solutions to meet the unique needs
+                                  of businesses. Their expertise spans across
+                                  various platforms, including mobile apps and
+                                  software applications. Digital Company is
+                                  committed to delivering high-quality,
+                                  user-friendly, and scalable solutions that
+                                  drive business growth and enhance the digital
+                                  presence of their clients. With their
+                                  dedication to excellence and cutting-edge
+                                  technology, they are the go-to choice for
+                                  businesses seeking top-notch app and software
+                                  development services.
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              class="elementor-element elementor-element-8f379ed elementor-mobile-align-center elementor-align-left elementor-widget elementor-widget-button"
+                              data-id="8f379ed"
+                              data-element_type="widget"
+                              data-widget_type="button.default"
+                            >
+                              <div class="elementor-widget-container">
+                                <div class="elementor-button-wrapper">
+                                  <a
+                                    class="elementor-button elementor-button-link elementor-size-sm"
+                                    href="https://www.besttech.in/app-development-company/"
+                                  >
+                                    <span
+                                      class="elementor-button-content-wrapper"
+                                    >
+                                      <span class="elementor-button-icon">
+                                        <i
+                                          aria-hidden="true"
+                                          class="fas fa-chevron-right"
+                                        ></i>
+                                      </span>
+                                      <span class="elementor-button-text"
+                                        >Go to App &amp; software</span
+                                      >
+                                    </span>
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+                <!-- .entry-content .clear -->
+              </article>
+              <!-- #post-## -->
+            </main>
+            <!-- #main -->
+          </div>
+          <!-- #primary -->
+        </div>
+        <!-- ast-container -->
+      </div>
+    
+
+      <script
+      type="text/javascript"
+      src="data:text/javascript;base64,CgkJCQljb25zdCBsYXp5bG9hZFJ1bk9ic2VydmVyID0gKCkgPT4gewoJCQkJCWNvbnN0IGxhenlsb2FkQmFja2dyb3VuZHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCBgLmUtY29uLmUtcGFyZW50Om5vdCguZS1sYXp5bG9hZGVkKWAgKTsKCQkJCQljb25zdCBsYXp5bG9hZEJhY2tncm91bmRPYnNlcnZlciA9IG5ldyBJbnRlcnNlY3Rpb25PYnNlcnZlciggKCBlbnRyaWVzICkgPT4gewoJCQkJCQllbnRyaWVzLmZvckVhY2goICggZW50cnkgKSA9PiB7CgkJCQkJCQlpZiAoIGVudHJ5LmlzSW50ZXJzZWN0aW5nICkgewoJCQkJCQkJCWxldCBsYXp5bG9hZEJhY2tncm91bmQgPSBlbnRyeS50YXJnZXQ7CgkJCQkJCQkJaWYoIGxhenlsb2FkQmFja2dyb3VuZCApIHsKCQkJCQkJCQkJbGF6eWxvYWRCYWNrZ3JvdW5kLmNsYXNzTGlzdC5hZGQoICdlLWxhenlsb2FkZWQnICk7CgkJCQkJCQkJfQoJCQkJCQkJCWxhenlsb2FkQmFja2dyb3VuZE9ic2VydmVyLnVub2JzZXJ2ZSggZW50cnkudGFyZ2V0ICk7CgkJCQkJCQl9CgkJCQkJCX0pOwoJCQkJCX0sIHsgcm9vdE1hcmdpbjogJzIwMHB4IDBweCAyMDBweCAwcHgnIH0gKTsKCQkJCQlsYXp5bG9hZEJhY2tncm91bmRzLmZvckVhY2goICggbGF6eWxvYWRCYWNrZ3JvdW5kICkgPT4gewoJCQkJCQlsYXp5bG9hZEJhY2tncm91bmRPYnNlcnZlci5vYnNlcnZlKCBsYXp5bG9hZEJhY2tncm91bmQgKTsKCQkJCQl9ICk7CgkJCQl9OwoJCQkJY29uc3QgZXZlbnRzID0gWwoJCQkJCSdET01Db250ZW50TG9hZGVkJywKCQkJCQknZWxlbWVudG9yL2xhenlsb2FkL29ic2VydmUnLAoJCQkJXTsKCQkJCWV2ZW50cy5mb3JFYWNoKCAoIGV2ZW50ICkgPT4gewoJCQkJCWRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoIGV2ZW50LCBsYXp5bG9hZFJ1bk9ic2VydmVyICk7CgkJCQl9ICk7CgkJCQ=="
+      data-rocket-status="executed"
+    >
+      const lazyloadRunObserver = () => {
+      	const lazyloadBackgrounds = document.querySelectorAll( `.e-con.e-parent:not(.e-lazyloaded)` );
+      	const lazyloadBackgroundObserver = new IntersectionObserver( ( entries ) => {
+      		entries.forEach( ( entry ) => {
+      			if ( entry.isIntersecting ) {
+      				let lazyloadBackground = entry.target;
+      				if( lazyloadBackground ) {
+      					lazyloadBackground.classList.add( 'e-lazyloaded' );
+      				}
+      				lazyloadBackgroundObserver.unobserve( entry.target );
+      			}
+      		});
+      	}, { rootMargin: '200px 0px 200px 0px' } );
+      	lazyloadBackgrounds.forEach( ( lazyloadBackground ) => {
+      		lazyloadBackgroundObserver.observe( lazyloadBackground );
+      	} );
+      };
+      const events = [
+      	'DOMContentLoaded',
+      	'elementor/lazyload/observe',
+      ];
+      events.forEach( ( event ) => {
+      	document.addEventListener( event, lazyloadRunObserver );
+      } );
+    </script>
+    <script id="astra-theme-js-js-extra">
+      var astra = {
+        break_point: "1200",
+        isRtl: "",
+        is_scroll_to_id: "",
+        is_scroll_to_top: "",
+        is_header_footer_builder_active: "",
+        responsive_cart_click: "flyout",
+      };
+    </script>
+    <script
+      id="astra-theme-js-js"
+      defer=""
+      src="https://www.besttech.in/wp-content/themes/astra/assets/js/minified/style.min.js?ver=4.8.1"
+      data-rocket-status="executed"
+    ></script>
+    <script
+      id="elementor-webpack-runtime-js"
+      defer=""
+      src="https://www.besttech.in/wp-content/plugins/elementor/assets/js/webpack.runtime.min.js?ver=3.24.3"
+      data-rocket-status="executed"
+    ></script>
+    <script
+      id="jquery-core-js"
+      defer=""
+      src="https://www.besttech.in/wp-includes/js/jquery/jquery.min.js?ver=3.7.1"
+      data-rocket-status="executed"
+    ></script>
+    <script
+      id="jquery-migrate-js"
+      defer=""
+      src="https://www.besttech.in/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1"
+      data-rocket-status="executed"
+    ></script>
+    <script
+      id="elementor-frontend-modules-js"
+      defer=""
+      src="https://www.besttech.in/wp-content/plugins/elementor/assets/js/frontend-modules.min.js?ver=3.24.3"
+      data-rocket-status="executed"
+    ></script>
+    <script
+      id="jquery-ui-core-js"
+      defer=""
+      src="https://www.besttech.in/wp-includes/js/jquery/ui/core.min.js?ver=1.13.3"
+      data-rocket-status="executed"
+    ></script>
+    <script
+      id="elementor-frontend-js-before"
+      src="data:text/javascript;base64,CnZhciBlbGVtZW50b3JGcm9udGVuZENvbmZpZyA9IHsiZW52aXJvbm1lbnRNb2RlIjp7ImVkaXQiOmZhbHNlLCJ3cFByZXZpZXciOmZhbHNlLCJpc1NjcmlwdERlYnVnIjpmYWxzZX0sImkxOG4iOnsic2hhcmVPbkZhY2Vib29rIjoiU2hhcmUgb24gRmFjZWJvb2siLCJzaGFyZU9uVHdpdHRlciI6IlNoYXJlIG9uIFR3aXR0ZXIiLCJwaW5JdCI6IlBpbiBpdCIsImRvd25sb2FkIjoiRG93bmxvYWQiLCJkb3dubG9hZEltYWdlIjoiRG93bmxvYWQgaW1hZ2UiLCJmdWxsc2NyZWVuIjoiRnVsbHNjcmVlbiIsInpvb20iOiJab29tIiwic2hhcmUiOiJTaGFyZSIsInBsYXlWaWRlbyI6IlBsYXkgVmlkZW8iLCJwcmV2aW91cyI6IlByZXZpb3VzIiwibmV4dCI6Ik5leHQiLCJjbG9zZSI6IkNsb3NlIiwiYTExeUNhcm91c2VsV3JhcHBlckFyaWFMYWJlbCI6IkNhcm91c2VsIHwgSG9yaXpvbnRhbCBzY3JvbGxpbmc6IEFycm93IExlZnQgJiBSaWdodCIsImExMXlDYXJvdXNlbFByZXZTbGlkZU1lc3NhZ2UiOiJQcmV2aW91cyBzbGlkZSIsImExMXlDYXJvdXNlbE5leHRTbGlkZU1lc3NhZ2UiOiJOZXh0IHNsaWRlIiwiYTExeUNhcm91c2VsRmlyc3RTbGlkZU1lc3NhZ2UiOiJUaGlzIGlzIHRoZSBmaXJzdCBzbGlkZSIsImExMXlDYXJvdXNlbExhc3RTbGlkZU1lc3NhZ2UiOiJUaGlzIGlzIHRoZSBsYXN0IHNsaWRlIiwiYTExeUNhcm91c2VsUGFnaW5hdGlvbkJ1bGxldE1lc3NhZ2UiOiJHbyB0byBzbGlkZSJ9LCJpc19ydGwiOmZhbHNlLCJicmVha3BvaW50cyI6eyJ4cyI6MCwic20iOjQ4MCwibWQiOjc2OCwibGciOjEwMjUsInhsIjoxNDQwLCJ4eGwiOjE2MDB9LCJyZXNwb25zaXZlIjp7ImJyZWFrcG9pbnRzIjp7Im1vYmlsZSI6eyJsYWJlbCI6Ik1vYmlsZSBQb3J0cmFpdCIsInZhbHVlIjo3NjcsImRlZmF1bHRfdmFsdWUiOjc2NywiZGlyZWN0aW9uIjoibWF4IiwiaXNfZW5hYmxlZCI6dHJ1ZX0sIm1vYmlsZV9leHRyYSI6eyJsYWJlbCI6Ik1vYmlsZSBMYW5kc2NhcGUiLCJ2YWx1ZSI6ODgwLCJkZWZhdWx0X3ZhbHVlIjo4ODAsImRpcmVjdGlvbiI6Im1heCIsImlzX2VuYWJsZWQiOmZhbHNlfSwidGFibGV0Ijp7ImxhYmVsIjoiVGFibGV0IFBvcnRyYWl0IiwidmFsdWUiOjEwMjQsImRlZmF1bHRfdmFsdWUiOjEwMjQsImRpcmVjdGlvbiI6Im1heCIsImlzX2VuYWJsZWQiOnRydWV9LCJ0YWJsZXRfZXh0cmEiOnsibGFiZWwiOiJUYWJsZXQgTGFuZHNjYXBlIiwidmFsdWUiOjEyMDAsImRlZmF1bHRfdmFsdWUiOjEyMDAsImRpcmVjdGlvbiI6Im1heCIsImlzX2VuYWJsZWQiOmZhbHNlfSwibGFwdG9wIjp7ImxhYmVsIjoiTGFwdG9wIiwidmFsdWUiOjEzNjYsImRlZmF1bHRfdmFsdWUiOjEzNjYsImRpcmVjdGlvbiI6Im1heCIsImlzX2VuYWJsZWQiOmZhbHNlfSwid2lkZXNjcmVlbiI6eyJsYWJlbCI6IldpZGVzY3JlZW4iLCJ2YWx1ZSI6MjQwMCwiZGVmYXVsdF92YWx1ZSI6MjQwMCwiZGlyZWN0aW9uIjoibWluIiwiaXNfZW5hYmxlZCI6ZmFsc2V9fX0sInZlcnNpb24iOiIzLjI0LjMiLCJpc19zdGF0aWMiOmZhbHNlLCJleHBlcmltZW50YWxGZWF0dXJlcyI6eyJhZGRpdGlvbmFsX2N1c3RvbV9icmVha3BvaW50cyI6dHJ1ZSwiY29udGFpbmVyX2dyaWQiOnRydWUsImVfc3dpcGVyX2xhdGVzdCI6dHJ1ZSwiZV9uZXN0ZWRfYXRvbWljX3JlcGVhdGVycyI6dHJ1ZSwiZV9vbmJvYXJkaW5nIjp0cnVlLCJob21lX3NjcmVlbiI6dHJ1ZSwiYWktbGF5b3V0Ijp0cnVlLCJsYW5kaW5nLXBhZ2VzIjp0cnVlLCJsaW5rLWluLWJpbyI6dHJ1ZSwiZmxvYXRpbmctYnV0dG9ucyI6dHJ1ZX0sInVybHMiOnsiYXNzZXRzIjoiaHR0cHM6XC9cL3d3dy5iZXN0dGVjaC5pblwvd3AtY29udGVudFwvcGx1Z2luc1wvZWxlbWVudG9yXC9hc3NldHNcLyIsImFqYXh1cmwiOiJodHRwczpcL1wvd3d3LmJlc3R0ZWNoLmluXC93cC1hZG1pblwvYWRtaW4tYWpheC5waHAifSwibm9uY2VzIjp7ImZsb2F0aW5nQnV0dG9uc0NsaWNrVHJhY2tpbmciOiI3NzA2ZGRiODRjIn0sInN3aXBlckNsYXNzIjoic3dpcGVyIiwic2V0dGluZ3MiOnsicGFnZSI6W10sImVkaXRvclByZWZlcmVuY2VzIjpbXX0sImtpdCI6eyJhY3RpdmVfYnJlYWtwb2ludHMiOlsidmlld3BvcnRfbW9iaWxlIiwidmlld3BvcnRfdGFibGV0Il0sImdsb2JhbF9pbWFnZV9saWdodGJveCI6InllcyIsImxpZ2h0Ym94X2VuYWJsZV9jb3VudGVyIjoieWVzIiwibGlnaHRib3hfZW5hYmxlX2Z1bGxzY3JlZW4iOiJ5ZXMiLCJsaWdodGJveF9lbmFibGVfem9vbSI6InllcyIsImxpZ2h0Ym94X2VuYWJsZV9zaGFyZSI6InllcyIsImxpZ2h0Ym94X3RpdGxlX3NyYyI6InRpdGxlIiwibGlnaHRib3hfZGVzY3JpcHRpb25fc3JjIjoiZGVzY3JpcHRpb24ifSwicG9zdCI6eyJpZCI6MTQ2NTIsInRpdGxlIjoiRGlnaXRhbCUyMENvbXBhbnklMjBJbiUyMENoZW5uYWklMjAlN0MlMjBCZXN0dGVjaCUyMERpZ2l0YWwlMjBDb21wYW55IiwiZXhjZXJwdCI6IiIsImZlYXR1cmVkSW1hZ2UiOiJodHRwczpcL1wvd3d3LmJlc3R0ZWNoLmluXC93cC1jb250ZW50XC91cGxvYWRzXC8yMDI0XC8wNVwvMjgtMTAyNHgxMDI0LnBuZyJ9fTsK"
+      data-rocket-status="executed"
+    >
+      var elementorFrontendConfig = {"environmentMode":{"edit":false,"wpPreview":false,"isScriptDebug":false},"i18n":{"shareOnFacebook":"Share on Facebook","shareOnTwitter":"Share on Twitter","pinIt":"Pin it","download":"Download","downloadImage":"Download image","fullscreen":"Fullscreen","zoom":"Zoom","share":"Share","playVideo":"Play Video","previous":"Previous","next":"Next","close":"Close","a11yCarouselWrapperAriaLabel":"Carousel | Horizontal scrolling: Arrow Left & Right","a11yCarouselPrevSlideMessage":"Previous slide","a11yCarouselNextSlideMessage":"Next slide","a11yCarouselFirstSlideMessage":"This is the first slide","a11yCarouselLastSlideMessage":"This is the last slide","a11yCarouselPaginationBulletMessage":"Go to slide"},"is_rtl":false,"breakpoints":{"xs":0,"sm":480,"md":768,"lg":1025,"xl":1440,"xxl":1600},"responsive":{"breakpoints":{"mobile":{"label":"Mobile Portrait","value":767,"default_value":767,"direction":"max","is_enabled":true},"mobile_extra":{"label":"Mobile Landscape","value":880,"default_value":880,"direction":"max","is_enabled":false},"tablet":{"label":"Tablet Portrait","value":1024,"default_value":1024,"direction":"max","is_enabled":true},"tablet_extra":{"label":"Tablet Landscape","value":1200,"default_value":1200,"direction":"max","is_enabled":false},"laptop":{"label":"Laptop","value":1366,"default_value":1366,"direction":"max","is_enabled":false},"widescreen":{"label":"Widescreen","value":2400,"default_value":2400,"direction":"min","is_enabled":false}}},"version":"3.24.3","is_static":false,"experimentalFeatures":{"additional_custom_breakpoints":true,"container_grid":true,"e_swiper_latest":true,"e_nested_atomic_repeaters":true,"e_onboarding":true,"home_screen":true,"ai-layout":true,"landing-pages":true,"link-in-bio":true,"floating-buttons":true},"urls":{"assets":"https:\/\/www.besttech.in\/wp-content\/plugins\/elementor\/assets\/","ajaxurl":"https:\/\/www.besttech.in\/wp-admin\/admin-ajax.php"},"nonces":{"floatingButtonsClickTracking":"7706ddb84c"},"swiperClass":"swiper","settings":{"page":[],"editorPreferences":[]},"kit":{"active_breakpoints":["viewport_mobile","viewport_tablet"],"global_image_lightbox":"yes","lightbox_enable_counter":"yes","lightbox_enable_fullscreen":"yes","lightbox_enable_zoom":"yes","lightbox_enable_share":"yes","lightbox_title_src":"title","lightbox_description_src":"description"},"post":{"id":14652,"title":"Digital%20Company%20In%20Chennai%20%7C%20Besttech%20Digital%20Company","excerpt":"","featuredImage":"https:\/\/www.besttech.in\/wp-content\/uploads\/2024\/05\/28-1024x1024.png"}};
+    </script>
+    <script
+      id="elementor-frontend-js"
+      defer=""
+      src="https://www.besttech.in/wp-content/plugins/elementor/assets/js/frontend.min.js?ver=3.24.3"
+      data-rocket-status="executed"
+    ></script>
+    <script
+      src="data:text/javascript;base64,CgkJCS8odHJpZGVudHxtc2llKS9pLnRlc3QobmF2aWdhdG9yLnVzZXJBZ2VudCkmJmRvY3VtZW50LmdldEVsZW1lbnRCeUlkJiZ3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lciYmd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoImhhc2hjaGFuZ2UiLGZ1bmN0aW9uKCl7dmFyIHQsZT1sb2NhdGlvbi5oYXNoLnN1YnN0cmluZygxKTsvXltBLXowLTlfLV0rJC8udGVzdChlKSYmKHQ9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoZSkpJiYoL14oPzphfHNlbGVjdHxpbnB1dHxidXR0b258dGV4dGFyZWEpJC9pLnRlc3QodC50YWdOYW1lKXx8KHQudGFiSW5kZXg9LTEpLHQuZm9jdXMoKSl9LCExKTsKCQkJ"
+      data-rocket-status="executed"
+    >
+      /(trident|msie)/i.test(navigator.userAgent)&&document.getElementById&&window.addEventListener&&window.addEventListener("hashchange",function(){var t,e=location.hash.substring(1);/^[A-z0-9_-]+$/.test(e)&&(t=document.getElementById(e))&&(/^(?:a|select|input|button|textarea)$/i.test(t.tagName)||(t.tabIndex=-1),t.focus())},!1);
+    </script>
+    <script>
+      class RocketElementorAnimation {
+        constructor() {
+          (this.deviceMode = document.createElement("span")),
+            (this.deviceMode.id = "elementor-device-mode-wpr"),
+            this.deviceMode.setAttribute("class", "elementor-screen-only"),
+            document.body.appendChild(this.deviceMode);
+        }
+        _detectAnimations() {
+          let t = getComputedStyle(this.deviceMode, ":after").content.replace(
+            /"/g,
+            ""
+          );
+          (this.animationSettingKeys = this._listAnimationSettingsKeys(t)),
+            document
+              .querySelectorAll(".elementor-invisible[data-settings]")
+              .forEach((t) => {
+                const e = t.getBoundingClientRect();
+                if (e.bottom >= 0 && e.top <= window.innerHeight)
+                  try {
+                    this._animateElement(t);
+                  } catch (t) {}
+              });
+        }
+        _animateElement(t) {
+          const e = JSON.parse(t.dataset.settings),
+            i = e._animation_delay || e.animation_delay || 0,
+            n = e[this.animationSettingKeys.find((t) => e[t])];
+          if ("none" === n)
+            return void t.classList.remove("elementor-invisible");
+          t.classList.remove(n),
+            this.currentAnimation && t.classList.remove(this.currentAnimation),
+            (this.currentAnimation = n);
+          let s = setTimeout(() => {
+            t.classList.remove("elementor-invisible"),
+              t.classList.add("animated", n),
+              this._removeAnimationSettings(t, e);
+          }, i);
+          window.addEventListener("rocket-startLoading", function () {
+            clearTimeout(s);
+          });
+        }
+        _listAnimationSettingsKeys(t = "mobile") {
+          const e = [""];
+          switch (t) {
+            case "mobile":
+              e.unshift("_mobile");
+            case "tablet":
+              e.unshift("_tablet");
+            case "desktop":
+              e.unshift("_desktop");
+          }
+          const i = [];
+          return (
+            ["animation", "_animation"].forEach((t) => {
+              e.forEach((e) => {
+                i.push(t + e);
+              });
+            }),
+            i
+          );
+        }
+        _removeAnimationSettings(t, e) {
+          this._listAnimationSettingsKeys().forEach((t) => delete e[t]),
+            (t.dataset.settings = JSON.stringify(e));
+        }
+        static run() {
+          const t = new RocketElementorAnimation();
+          requestAnimationFrame(t._detectAnimations.bind(t));
+        }
+      }
+      document.addEventListener(
+        "DOMContentLoaded",
+        RocketElementorAnimation.run
+      );
+    </script>
+ <script src="js/mains.js"></script>
+    <span id="elementor-device-mode-wpr" class="elementor-screen-only"></span
+    ><span id="elementor-device-mode" class="elementor-screen-only"></span>
+  </body>
+</html>
